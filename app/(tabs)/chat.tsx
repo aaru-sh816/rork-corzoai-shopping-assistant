@@ -8,13 +8,12 @@ import {
   TouchableOpacity, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator,
   Animated,
   Easing,
   Dimensions,
-  Image
+  StatusBar as RNStatusBar
 } from 'react-native';
-import { ArrowLeft, Send, Mic, X, Plus } from 'lucide-react-native';
+import { ArrowLeft, Send, Plus, Sparkles, Zap } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
@@ -23,10 +22,12 @@ import ChatMessage from '@/components/ChatMessage';
 import AIGlow from '@/components/AIGlow';
 import VoiceButton from '@/components/VoiceButton';
 import GroceryPreferences from '@/components/GroceryPreferences';
+import HeadphoneComparison from '@/components/HeadphoneComparison';
+import ProductDetailCard from '@/components/ProductDetailCard';
+import UseCaseSelector from '@/components/UseCaseSelector';
 import { useAppStore } from '@/store/useAppStore';
 import { generateAIResponse } from '@/utils/aiService';
 import { startVoiceRecognition, stopVoiceRecognition, textToSpeech } from '@/utils/voiceService';
-import HeadphoneComparison from '@/components/HeadphoneComparison';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,12 +40,13 @@ export default function ChatScreen() {
   const [showGlow, setShowGlow] = useState(true);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHeadphoneComparison, setShowHeadphoneComparison] = useState(false);
+  const [showProductDetail, setShowProductDetail] = useState(false);
+  const [showUseCaseSelector, setShowUseCaseSelector] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [responseData, setResponseData] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const inputHeight = useRef(new Animated.Value(50)).current;
-  const maxInputHeight = 120;
+  const glowOpacity = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -53,33 +55,56 @@ export default function ChatScreen() {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages, showPreferences, showHeadphoneComparison]);
+  }, [messages, showPreferences, showHeadphoneComparison, showProductDetail, showUseCaseSelector]);
 
   useEffect(() => {
-    // Pulse animation for the glow when AI is responding
+    // Enhanced pulse animation for AI thinking
     if (isLoading) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
+          Animated.parallel([
+            Animated.timing(pulseAnim, {
+              toValue: 1.3,
+              duration: 1200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowOpacity, {
+              toValue: 1,
+              duration: 1200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(pulseAnim, {
+              toValue: 0.9,
+              duration: 1200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowOpacity, {
+              toValue: 0.6,
+              duration: 1200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
         ])
       ).start();
     } else {
-      Animated.timing(pulseAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowOpacity, {
+          toValue: 0.8,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [isLoading]);
 
@@ -98,38 +123,55 @@ export default function ChatScreen() {
     setShowGlow(true);
     setResponseData(null);
     
-    // Check if the message is about groceries to show preferences UI
+    // Reset all UI states
+    setShowPreferences(false);
+    setShowHeadphoneComparison(false);
+    setShowProductDetail(false);
+    setShowUseCaseSelector(false);
+    
     const lowerMessage = userMessage.toLowerCase();
-    if ((lowerMessage.includes('onion') || lowerMessage.includes('garlic') || lowerMessage.includes('tomato')) && 
-        (lowerMessage.includes('order') || lowerMessage.includes('buy'))) {
-      setCurrentQuery(userMessage);
-      setShowPreferences(true);
-      setIsLoading(false);
-      return;
-    }
-
-    // Check if the message is about headphones comparison
-    if (lowerMessage.includes('headphone') && 
-        (lowerMessage.includes('compare') || lowerMessage.includes('price') || lowerMessage.includes('under 5000'))) {
-      setShowHeadphoneComparison(true);
-      setIsLoading(false);
-      return;
-    }
     
     try {
-      // Call the n8n webhook with the user's message
+      // Call the n8n webhook
       const response = await generateAIResponse(userMessage);
-      addMessage({ text: response.text, isUser: false });
       
-      // Store structured data if available
+      // Handle different types of responses
       if (response.data) {
         setResponseData(response.data);
         
-        // Handle specific response types
-        if (response.data.products && Array.isArray(response.data.products)) {
+        // Check for grocery items
+        if (response.data.groceryItems || 
+            (lowerMessage.includes('grocery') || lowerMessage.includes('onion') || 
+             lowerMessage.includes('tomato') || lowerMessage.includes('garlic')) &&
+            (lowerMessage.includes('order') || lowerMessage.includes('buy'))) {
+          setCurrentQuery(userMessage);
+          setShowPreferences(true);
+          addMessage({ text: "I'll help you order groceries! Let me show you some customization options.", isUser: false });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Check for headphone comparison
+        if (response.data.products || 
+            (lowerMessage.includes('headphone') && 
+             (lowerMessage.includes('compare') || lowerMessage.includes('under') || lowerMessage.includes('best')))) {
           setShowHeadphoneComparison(true);
+          addMessage({ text: response.text, isUser: false });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Check for use case selection (headphones with budget)
+        if (lowerMessage.includes('headphone') && lowerMessage.includes('10k')) {
+          setShowUseCaseSelector(true);
+          addMessage({ text: "What's your ideal use case for these headphones?", isUser: false });
+          setIsLoading(false);
+          return;
         }
       }
+      
+      // Default response
+      addMessage({ text: response.text, isUser: false });
       
       // Speak the response using text-to-speech
       if (Platform.OS !== 'web') {
@@ -138,7 +180,7 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Error generating response:', error);
       addMessage({ 
-        text: "I'm sorry, I couldn't process your request. Please try again.", 
+        text: "I'm experiencing some technical difficulties. Let me try to help you anyway! What are you looking for?", 
         isUser: false 
       });
     } finally {
@@ -161,7 +203,6 @@ export default function ChatScreen() {
       setIsListening(result.isListening);
       
       if (result.text) {
-        // Process the transcribed text
         setInputText(result.text);
         addMessage({ text: result.text, isUser: true });
         await processUserInput(result.text);
@@ -174,42 +215,62 @@ export default function ChatScreen() {
   const handlePreferencesComplete = (preferences: any) => {
     setShowPreferences(false);
     
-    // Add a message with the selected preferences
     const preferencesText = `Selected preferences:
-- Onion: ${preferences.onion}
-- Garlic: ${preferences.garlic}
-- Tomato: ${preferences.tomato}`;
+• Onion: ${preferences.onion}
+• Garlic: ${preferences.garlic}  
+• Tomato: ${preferences.tomato}`;
     
     addMessage({ text: preferencesText, isUser: true });
     
-    // Generate a response based on the preferences
-    const responseText = `I've added these items to your cart:
-- ${preferences.onion} Onions
-- ${preferences.garlic} Garlic
-- ${preferences.tomato} Tomatoes
+    const responseText = `Perfect! I've added these items to your cart:
+• ${preferences.onion} Onions - ₹29
+• ${preferences.garlic} Garlic - ₹18
+• ${preferences.tomato} Tomatoes - ₹14
 
-The best price for these items is on Blinkit at ₹87 total. Would you like to checkout now?`;
+Total: ₹61 (Best price on Blinkit)
+Delivery in 10 minutes! 🚀
+
+Would you like to checkout now?`;
     
     addMessage({ text: responseText, isUser: false });
   };
 
   const handleProductSelect = (product: any) => {
     setShowHeadphoneComparison(false);
+    setShowProductDetail(true);
+    setResponseData({ selectedProduct: product });
     
-    // Add a message with the selected product
-    const productText = `I'm interested in the ${product.name} for ₹${product.price}`;
-    
+    const productText = `I'm interested in the ${product.name}`;
     addMessage({ text: productText, isUser: true });
     
-    // Generate a response based on the selected product
-    const responseText = `Great choice! The ${product.name} is available for ₹${product.price} on ${product.store}. 
-    
-It features:
-${product.features.map((feature: string) => `- ${feature}`).join('\n')}
-
-Would you like me to add this to your cart or show you more options?`;
-    
+    const responseText = `Excellent choice! The ${product.name} is a fantastic option. Let me show you detailed information and where to get the best price.`;
     addMessage({ text: responseText, isUser: false });
+  };
+
+  const handleUseCaseSelect = (useCase: string) => {
+    setShowUseCaseSelector(false);
+    
+    addMessage({ text: useCase, isUser: true });
+    
+    // Show headphone comparison based on use case
+    setShowHeadphoneComparison(true);
+    
+    const responseText = `Based on your use case "${useCase}", here are the 2 best recommendations for your purpose and budget:`;
+    addMessage({ text: responseText, isUser: false });
+  };
+
+  const handleNewChat = () => {
+    // Reset all states
+    setShowPreferences(false);
+    setShowHeadphoneComparison(false);
+    setShowProductDetail(false);
+    setShowUseCaseSelector(false);
+    setResponseData(null);
+    
+    addMessage({
+      text: "Hi! I'm your AI shopping assistant. I can help you find products, compare prices, and get the best deals. What are you looking for today?",
+      isUser: false
+    });
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -217,47 +278,29 @@ Would you like me to add this to your cart or show you more options?`;
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const toggleGlow = () => {
-    setShowGlow(!showGlow);
-  };
-
-  const handleInputChange = (text: string) => {
-    setInputText(text);
-    
-    // Adjust input height based on content
-    const numberOfLines = text.split('\n').length;
-    const newHeight = Math.min(50 + (numberOfLines - 1) * 20, maxInputHeight);
-    
-    Animated.timing(inputHeight, {
-      toValue: newHeight,
-      duration: 100,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleNewChat = () => {
-    // Clear messages and start a new chat
-    // This would typically reset the conversation in a real app
-    addMessage({
-      text: "Hi there! I'm your CorzoAI shopping assistant. How can I help you today?",
-      isUser: false
-    });
-  };
-
   return (
     <View style={styles.container}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#000000" />
       <StatusBar />
       
       <LinearGradient
-        colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.8)', 'rgba(0,0,0,0.7)']}
+        colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.9)', 'rgba(0,0,0,0.85)']}
         style={styles.header}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
           <ArrowLeft size={24} color={Colors.dark.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thread</Text>
-        <TouchableOpacity style={styles.newChatButton} onPress={handleNewChat}>
-          <Plus size={20} color={Colors.dark.text} />
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Thread</Text>
+          <View style={styles.aiIndicator}>
+            <Sparkles size={16} color={Colors.dark.accent} />
+            <Text style={styles.aiText}>AI Assistant</Text>
+          </View>
+        </View>
+        
+        <TouchableOpacity style={styles.headerButton} onPress={handleNewChat}>
+          <Plus size={24} color={Colors.dark.text} />
         </TouchableOpacity>
       </LinearGradient>
       
@@ -270,10 +313,13 @@ Would you like me to add this to your cart or show you more options?`;
           <Animated.View 
             style={[
               styles.glowContainer, 
-              { transform: [{ scale: pulseAnim }] }
+              { 
+                transform: [{ scale: pulseAnim }],
+                opacity: glowOpacity,
+              }
             ]}
           >
-            <AIGlow isActive={isLoading} />
+            <AIGlow isActive={isLoading} color={Colors.dark.accent} size={120} />
           </Animated.View>
         )}
         
@@ -283,13 +329,19 @@ Would you like me to add this to your cart or show you more options?`;
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.tryAskingContainer}>
-            <Text style={styles.tryAskingText}>Try Asking ✨ ✨</Text>
+          <View style={styles.welcomeContainer}>
+            <LinearGradient
+              colors={['rgba(52, 211, 153, 0.1)', 'rgba(52, 211, 153, 0.05)']}
+              style={styles.welcomeBadge}
+            >
+              <Zap size={16} color={Colors.dark.accent} />
+              <Text style={styles.welcomeText}>Superhuman AI Assistant</Text>
+            </LinearGradient>
           </View>
           
           {messages.map((message, index) => (
             <ChatMessage
-              key={`${message.id}:${index}`}
+              key={`${message.id}-${index}`}
               message={message.text}
               isUser={message.isUser}
               timestamp={formatTimestamp(message.timestamp)}
@@ -309,6 +361,18 @@ Would you like me to add this to your cart or show you more options?`;
             />
           )}
           
+          {showProductDetail && responseData?.selectedProduct && (
+            <ProductDetailCard 
+              product={responseData.selectedProduct}
+            />
+          )}
+          
+          {showUseCaseSelector && (
+            <UseCaseSelector 
+              onSelectUseCase={handleUseCaseSelect}
+            />
+          )}
+          
           {isLoading && (
             <View style={styles.loadingContainer}>
               <View style={styles.loadingBubble}>
@@ -317,6 +381,7 @@ Would you like me to add this to your cart or show you more options?`;
                   <View style={[styles.typingDot, styles.typingDot2]} />
                   <View style={[styles.typingDot, styles.typingDot3]} />
                 </View>
+                <Text style={styles.loadingText}>AI is thinking...</Text>
               </View>
             </View>
           )}
@@ -350,31 +415,33 @@ Would you like me to add this to your cart or show you more options?`;
         </ScrollView>
         
         <LinearGradient
-          colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)', '#000']}
+          colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.95)', '#000']}
           style={styles.inputWrapper}
         >
           <View style={styles.inputContainer}>
-            <Animated.View style={[styles.inputBackground, { height: inputHeight }]}>
+            <View style={styles.inputBackground}>
               <TextInput
-                style={[styles.input, { height: inputHeight }]}
-                placeholder="Ask Anything Shopping"
+                style={styles.input}
+                placeholder="Ask anything about shopping..."
                 placeholderTextColor={Colors.dark.secondaryText}
                 value={inputText}
-                onChangeText={handleInputChange}
+                onChangeText={setInputText}
                 multiline
                 maxLength={500}
-                editable={!isListening && !showPreferences && !showHeadphoneComparison}
+                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector}
+                onSubmitEditing={handleSend}
+                returnKeyType="send"
               />
-            </Animated.View>
+            </View>
             
             {inputText.trim() ? (
               <TouchableOpacity 
                 style={[
                   styles.sendButton, 
-                  (isLoading || showPreferences || showHeadphoneComparison) && styles.disabledButton
+                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector) && styles.disabledButton
                 ]} 
                 onPress={handleSend}
-                disabled={isLoading || showPreferences || showHeadphoneComparison}
+                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector}
               >
                 <LinearGradient
                   colors={[Colors.dark.accent, Colors.dark.accentDark]}
@@ -406,38 +473,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.dark.text,
+    marginBottom: 2,
   },
-  newChatButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
+  aiIndicator: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+  },
+  aiText: {
+    fontSize: 12,
+    color: Colors.dark.accent,
+    fontWeight: '500',
   },
   keyboardAvoidingView: {
     flex: 1,
   },
   glowContainer: {
     position: 'absolute',
-    top: -50,
+    top: -40,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -447,21 +520,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
-  tryAskingContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    alignSelf: 'center',
+  welcomeContainer: {
+    alignItems: 'center',
     marginBottom: 24,
   },
-  tryAskingText: {
-    color: Colors.dark.text,
-    fontSize: 16,
-    fontWeight: '500',
+  welcomeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  welcomeText: {
+    color: Colors.dark.accent,
+    fontSize: 14,
+    fontWeight: '600',
   },
   loadingContainer: {
     alignItems: 'flex-start',
@@ -469,29 +546,31 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   loadingBubble: {
-    backgroundColor: Colors.dark.card,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     maxWidth: '80%',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.2)',
   },
   typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 30,
-    width: 60,
+    height: 20,
+    marginBottom: 8,
   },
   typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.dark.accent,
-    marginHorizontal: 3,
+    marginHorizontal: 2,
   },
   typingDot1: {
     opacity: 0.4,
-    transform: [{ scale: 0.9 }],
+    transform: [{ scale: 0.8 }],
   },
   typingDot2: {
     opacity: 0.7,
@@ -499,7 +578,13 @@ const styles = StyleSheet.create({
   },
   typingDot3: {
     opacity: 1,
-    transform: [{ scale: 1.1 }],
+    transform: [{ scale: 1.2 }],
+  },
+  loadingText: {
+    color: Colors.dark.accent,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   listeningContainer: {
     alignItems: 'center',
@@ -509,7 +594,7 @@ const styles = StyleSheet.create({
   listeningBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
     gap: 12,
@@ -523,7 +608,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 30,
-    gap: 4,
+    gap: 3,
   },
   wave: {
     width: 3,
@@ -531,33 +616,36 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   inputWrapper: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   inputBackground: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 24,
-    paddingHorizontal: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    minHeight: 48,
     justifyContent: 'center',
   },
   input: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     color: Colors.dark.text,
     fontSize: 16,
     maxHeight: 120,
   },
   sendButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
     overflow: 'hidden',
   },
   sendButtonGradient: {
@@ -567,6 +655,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabledButton: {
-    opacity: 0.7,
+    opacity: 0.5,
   },
 });

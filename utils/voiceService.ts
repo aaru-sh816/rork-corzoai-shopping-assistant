@@ -2,44 +2,27 @@ import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
 
-// Define types for Web Speech API without conflicting with global declarations
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number;
-  item(index: number): SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  readonly length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  isFinal: boolean;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-// Initialize ElevenLabs (in a real app)
-const ELEVENLABS_API_KEY = 'YOUR_ELEVENLABS_KEY';
-const VOICE_ID = 'YOUR_VOICE_ID';
+// ElevenLabs configuration
+const ELEVENLABS_API_KEY = 'sk_4f8c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c';
+const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Bella voice
 
 export const startVoiceRecognition = async (): Promise<{ isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
-      // Use a safer approach to access Web Speech API
-      const webSpeechRecognition = (window as any).SpeechRecognition || 
-                                  (window as any).webkitSpeechRecognition;
-      if (!webSpeechRecognition) {
-        throw new Error('Speech recognition not supported');
+      // Check if speech recognition is available
+      const SpeechRecognition = (window as any).SpeechRecognition || 
+                               (window as any).webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        console.log('Speech recognition not supported on this browser');
+        return { isListening: false };
       }
       
-      const recognition = new webSpeechRecognition();
+      const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
       recognition.start();
       return { isListening: true };
     } catch (error) {
@@ -48,9 +31,9 @@ export const startVoiceRecognition = async (): Promise<{ isListening: boolean }>
     }
   }
 
-  // For native platforms
+  // For native platforms, we would use react-native-voice
+  // For now, simulate the functionality
   try {
-    // In a real app, use react-native-voice
     return { isListening: true };
   } catch (error) {
     console.error('Native voice recognition error:', error);
@@ -61,49 +44,61 @@ export const startVoiceRecognition = async (): Promise<{ isListening: boolean }>
 export const stopVoiceRecognition = async (): Promise<{ text: string; isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
-      // Use a safer approach to access Web Speech API
-      const webSpeechRecognition = (window as any).SpeechRecognition || 
-                                  (window as any).webkitSpeechRecognition;
-      if (webSpeechRecognition) {
-        const recognition = new webSpeechRecognition();
-        recognition.stop();
+      const SpeechRecognition = (window as any).SpeechRecognition || 
+                               (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        // In a real implementation, you would handle the recognition result
+        // For demo, return a simulated response
       }
     } catch (error) {
       console.error('Web Speech Recognition stop error:', error);
     }
   }
 
-  // Simulate response for demo
-  const mockResponses = [
-    'Show me the best headphones under 5000 rupees',
-    'I need to buy groceries like tomatoes and onions',
-    'Find me a good protein bar without chemicals',
-    'What are the best deals on Myntra today',
+  // Simulate intelligent voice responses
+  const intelligentResponses = [
+    'Show me the best wireless headphones under 5000 rupees',
+    'I need to buy groceries like tomatoes, onions and garlic',
+    'Find me a chemical free protein powder with good reviews',
+    'What are the best deals on electronics today',
+    'Compare prices for iPhone 15 across different stores',
+    'I want to order organic vegetables for this week',
   ];
   
-  const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+  const randomResponse = intelligentResponses[Math.floor(Math.random() * intelligentResponses.length)];
   return { text: randomResponse, isListening: false };
 };
 
 export const textToSpeech = async (text: string): Promise<void> => {
   try {
     if (Platform.OS === 'web') {
-      // Use Web Speech API with a safer approach
-      const webSpeechSynthesis = (window as any).speechSynthesis;
-      const WebSpeechSynthesisUtterance = (window as any).SpeechSynthesisUtterance;
+      // Use Web Speech API for web
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
       
-      if (webSpeechSynthesis && WebSpeechSynthesisUtterance) {
-        const speech = new WebSpeechSynthesisUtterance(text);
-        speech.rate = 1;
-        speech.pitch = 1;
-        speech.volume = 1;
-        webSpeechSynthesis.speak(speech);
-        return;
+      // Configure voice settings
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
+      // Try to use a female voice if available
+      const voices = synth.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('female') || 
+        voice.name.toLowerCase().includes('samantha') ||
+        voice.name.toLowerCase().includes('karen')
+      );
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
       }
-      throw new Error('Speech synthesis not supported');
+      
+      synth.speak(utterance);
+      return;
     }
 
-    // Try ElevenLabs first
+    // Try ElevenLabs for high-quality voice synthesis
     try {
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
         method: 'POST',
@@ -112,34 +107,36 @@ export const textToSpeech = async (text: string): Promise<void> => {
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text,
+          text: text.substring(0, 500), // Limit text length
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
+            style: 0.5,
+            use_speaker_boost: true,
           },
+          model_id: 'eleven_multilingual_v2',
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('ElevenLabs API failed');
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+        await sound.playAsync();
+        return;
       }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
-      await sound.playAsync();
-
     } catch (elevenLabsError) {
       console.log('ElevenLabs failed, falling back to expo-speech:', elevenLabsError);
-      
-      // Fallback to expo-speech
-      await Speech.speak(text, {
-        language: 'en-US',
-        pitch: 1,
-        rate: 0.9,
-      });
     }
+    
+    // Fallback to expo-speech
+    await Speech.speak(text, {
+      language: 'en-US',
+      pitch: 1.1,
+      rate: 0.9,
+      quality: Speech.Quality.Enhanced,
+    });
 
   } catch (error) {
     console.error('Text to speech error:', error);

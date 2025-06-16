@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Info, PlusCircle, ShoppingCart } from 'lucide-react-native';
+import { Info, PlusCircle, ShoppingCart, Sparkles } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import PreferenceSelector from './PreferenceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -32,18 +31,20 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.queryText}>{query}</Text>
-      
-      <View style={styles.divider} />
+      <View style={styles.header}>
+        <Text style={styles.queryText}>{query}</Text>
+        <View style={styles.divider} />
+      </View>
       
       <Text style={styles.heading}>Select your preferences</Text>
       
       <ScrollView style={styles.preferencesContainer} showsVerticalScrollIndicator={false}>
+        {/* Onion Weight */}
         <View style={styles.preferenceSection}>
           <View style={styles.titleContainer}>
             <Text style={styles.sectionTitle}>Onion Weight</Text>
             <TouchableOpacity style={styles.infoButton}>
-              <Info size={20} color={Colors.dark.text} />
+              <Info size={18} color={Colors.dark.text} />
             </TouchableOpacity>
           </View>
           
@@ -72,11 +73,12 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
         
         <View style={styles.sectionDivider} />
         
+        {/* Garlic Weight */}
         <View style={styles.preferenceSection}>
           <View style={styles.titleContainer}>
             <Text style={styles.sectionTitle}>Garlic Weight</Text>
             <TouchableOpacity style={styles.infoButton}>
-              <Info size={20} color={Colors.dark.text} />
+              <Info size={18} color={Colors.dark.text} />
             </TouchableOpacity>
           </View>
           
@@ -105,11 +107,12 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
         
         <View style={styles.sectionDivider} />
         
+        {/* Tomato Quantity */}
         <View style={styles.preferenceSection}>
           <View style={styles.titleContainer}>
             <Text style={styles.sectionTitle}>Tomato Quantity</Text>
             <TouchableOpacity style={styles.infoButton}>
-              <Info size={20} color={Colors.dark.text} />
+              <Info size={18} color={Colors.dark.text} />
             </TouchableOpacity>
           </View>
           
@@ -138,25 +141,29 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
         
         <View style={styles.sectionDivider} />
         
+        {/* Suggest More Button */}
         <TouchableOpacity style={styles.suggestButton}>
-          <PlusCircle size={20} color={Colors.dark.text} />
-          <Text style={styles.suggestButtonText}>Suggest more preferences ✨</Text>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+            style={styles.suggestButtonGradient}
+          >
+            <Sparkles size={20} color={Colors.dark.accent} />
+            <Text style={styles.suggestButtonText}>Suggest more preferences</Text>
+          </LinearGradient>
         </TouchableOpacity>
         
-        <LinearGradient
-          colors={[Colors.dark.accent, Colors.dark.accentDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.completeButton}
-        >
-          <TouchableOpacity 
-            style={styles.completeButtonInner}
-            onPress={handleComplete}
+        {/* Add to Cart Button */}
+        <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+          <LinearGradient
+            colors={[Colors.dark.accent, Colors.dark.accentDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.completeButtonGradient}
           >
             <ShoppingCart size={20} color="#000000" />
             <Text style={styles.completeButtonText}>Add to Cart</Text>
-          </TouchableOpacity>
-        </LinearGradient>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -164,16 +171,20 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0A0A0A',
     borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
     marginHorizontal: 16,
+    marginVertical: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
+  },
+  header: {
+    padding: 20,
+    paddingBottom: 0,
   },
   queryText: {
     fontSize: 18,
@@ -185,10 +196,9 @@ const styles = StyleSheet.create({
   divider: {
     height: 4,
     width: 40,
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignSelf: 'center',
     borderRadius: 2,
-    marginBottom: 24,
   },
   heading: {
     fontSize: 24,
@@ -196,9 +206,11 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     marginBottom: 24,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   preferencesContainer: {
     maxHeight: 500,
+    paddingHorizontal: 20,
   },
   preferenceSection: {
     marginBottom: 16,
@@ -215,9 +227,9 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
   },
   infoButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -225,19 +237,21 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
     gap: 12,
   },
   optionButton: {
-    backgroundColor: '#2A2A2A',
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 24,
-    minWidth: (width - 100) / 4,
+    minWidth: (width - 80) / 4,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   selectedOption: {
     backgroundColor: Colors.dark.accent,
+    borderColor: Colors.dark.accent,
   },
   optionText: {
     color: Colors.dark.text,
@@ -250,32 +264,34 @@ const styles = StyleSheet.create({
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     marginVertical: 20,
   },
   suggestButton: {
+    marginTop: 8,
+    marginBottom: 24,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  suggestButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#333',
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 30,
-    marginTop: 8,
-    marginBottom: 24,
     gap: 8,
   },
   suggestButtonText: {
-    color: Colors.dark.text,
+    color: Colors.dark.accent,
     fontSize: 16,
     fontWeight: '500',
   },
   completeButton: {
-    borderRadius: 30,
-    marginBottom: 16,
+    borderRadius: 24,
+    marginBottom: 20,
     overflow: 'hidden',
   },
-  completeButtonInner: {
+  completeButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -288,5 +304,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-export default GroceryPreferences;

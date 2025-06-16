@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, Star, ExternalLink } from 'lucide-react-native';
+import { Check, Star, ExternalLink, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
@@ -14,61 +14,53 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
   const headphones = [
     {
       id: 'h1',
-      name: 'JBL Tune 510BT Wireless On-Ear Headphones',
-      price: 3499,
+      name: 'Sennheiser Accentum Wireless Bluetooth Over Ear Headphones',
+      price: 12989,
       image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       store: 'Amazon',
       storeLogo: 'https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
       features: [
-        'Up to 40 Hours Battery Life',
-        'Pure Bass Sound',
-        'Multi-Point Connection',
-        'Voice Assistant Compatible'
+        'Impressive sound',
+        'Exceptional battery life',
+        'Noise Cancellation',
       ],
-      rating: 4.3,
+      cons: [
+        'Average mic quality'
+      ],
+      rating: 4.5,
+      reviewSources: '7 Reviewed Sources',
       bestValue: true,
     },
     {
       id: 'h2',
-      name: 'boAt Rockerz 450 Bluetooth On-Ear Headphones',
-      price: 1999,
+      name: 'Sony WH-CH720N Wireless Noise Canceling Headphones',
+      price: 8990,
       image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       store: 'Flipkart',
       storeLogo: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
       features: [
-        'Up to 15 Hours Playback',
-        'Padded Ear Cushions',
-        'Integrated Controls',
-        'Foldable Design'
+        'Active Noise Cancellation',
+        '35 Hours Battery Life',
+        'Quick Charge',
+        'Lightweight Design'
       ],
-      rating: 4.1,
-    },
-    {
-      id: 'h3',
-      name: 'Noise Buds VS104 Truly Wireless Earbuds',
-      price: 1299,
-      image: 'https://images.unsplash.com/photo-1606400082777-ef05f3c5cde2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      store: 'Myntra',
-      storeLogo: 'https://images.unsplash.com/photo-1560243563-062bfc001d68?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-      features: [
-        'Up to 30 Hours Playtime',
-        'Environmental Noise Cancellation',
-        'Low Latency Gaming Mode',
-        'IPX5 Water Resistance'
+      cons: [
+        'Build quality could be better'
       ],
-      rating: 4.0,
+      rating: 4.2,
+      reviewSources: '5 Reviewed Sources',
     },
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Best Headphones Under ₹5,000</Text>
+      <Text style={styles.title}>Below are the 2 best recommendation for your purpose and budget.</Text>
       
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        snapToInterval={width * 0.85 + 20}
+        snapToInterval={width * 0.9 + 20}
         decelerationRate="fast"
       >
         {headphones.map((product) => (
@@ -86,6 +78,7 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
                 end={{ x: 1, y: 0 }}
                 style={styles.bestValueBadge}
               >
+                <Award size={16} color="#000000" />
                 <Text style={styles.bestValueText}>Best Value</Text>
               </LinearGradient>
             )}
@@ -95,18 +88,30 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
             <View style={styles.productInfo}>
               <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
               
-              <View style={styles.ratingContainer}>
-                <View style={styles.stars}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star 
-                      key={`star-${i}`}
-                      size={16}
-                      color={i < Math.floor(product.rating) ? Colors.dark.accent : '#444'}
-                      fill={i < Math.floor(product.rating) ? Colors.dark.accent : 'none'}
-                    />
-                  ))}
+              <View style={styles.reviewContainer}>
+                <View style={styles.reviewBadge}>
+                  <Text style={styles.reviewText}>{product.reviewSources}</Text>
                 </View>
-                <Text style={styles.ratingText}>{product.rating}</Text>
+              </View>
+              
+              {/* Features */}
+              <View style={styles.featuresContainer}>
+                {product.features.map((feature, index) => (
+                  <View key={index} style={styles.featureRow}>
+                    <Check size={16} color={Colors.dark.accent} />
+                    <Text style={styles.featureText}>{feature}</Text>
+                  </View>
+                ))}
+                
+                {/* Cons */}
+                {product.cons.map((con, index) => (
+                  <View key={`con-${index}`} style={styles.conRow}>
+                    <View style={styles.conIcon}>
+                      <Text style={styles.conX}>×</Text>
+                    </View>
+                    <Text style={styles.conText}>{con}</Text>
+                  </View>
+                ))}
               </View>
               
               <View style={styles.priceContainer}>
@@ -116,16 +121,9 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
                   <Text style={styles.storeName}>{product.store}</Text>
                 </View>
               </View>
-              
-              <View style={styles.featuresContainer}>
-                {product.features.map((feature, index) => (
-                  <View key={index} style={styles.featureRow}>
-                    <Check size={16} color={Colors.dark.accent} />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-              
+            </View>
+            
+            <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={styles.selectButton}
                 onPress={() => onSelectProduct(product)}
@@ -136,13 +134,9 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.selectButtonGradient}
                 >
-                  <Text style={styles.selectButtonText}>Select Product</Text>
+                  <Text style={styles.selectButtonText}>Try It Yourself ✨</Text>
+                  <ExternalLink size={16} color="#000000" />
                 </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.viewButton}>
-                <Text style={styles.viewButtonText}>View Details</Text>
-                <ExternalLink size={16} color={Colors.dark.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -158,20 +152,21 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: Colors.dark.text,
-    marginBottom: 16,
+    marginBottom: 20,
     paddingHorizontal: 16,
+    lineHeight: 24,
   },
   scrollContent: {
     paddingLeft: 16,
     paddingRight: 16,
   },
   productCard: {
-    backgroundColor: '#121212',
-    borderRadius: 16,
-    width: width * 0.85,
+    backgroundColor: '#0A0A0A',
+    borderRadius: 20,
+    width: width * 0.9,
     marginRight: 20,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -179,19 +174,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   bestValueCard: {
     borderColor: Colors.dark.accent,
     borderWidth: 2,
   },
   bestValueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     zIndex: 1,
+    gap: 4,
   },
   bestValueText: {
     color: '#000',
@@ -200,36 +200,76 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: 180,
+    height: 200,
     resizeMode: 'cover',
   },
   productInfo: {
-    padding: 16,
+    padding: 20,
   },
   productName: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.dark.text,
-    marginBottom: 8,
+    marginBottom: 12,
+    lineHeight: 24,
   },
-  ratingContainer: {
+  reviewContainer: {
+    marginBottom: 16,
+  },
+  reviewBadge: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  reviewText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  featuresContainer: {
+    marginBottom: 20,
+  },
+  featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
+    gap: 8,
   },
-  stars: {
-    flexDirection: 'row',
-    marginRight: 8,
-  },
-  ratingText: {
-    color: Colors.dark.secondaryText,
+  featureText: {
     fontSize: 14,
+    color: Colors.dark.text,
+    fontWeight: '500',
+  },
+  conRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  conIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  conX: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  conText: {
+    fontSize: 14,
+    color: Colors.dark.text,
+    fontWeight: '500',
   },
   priceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   productPrice: {
     fontSize: 24,
@@ -239,58 +279,36 @@ const styles = StyleSheet.create({
   storeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   storeLogo: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    marginRight: 4,
   },
   storeName: {
     fontSize: 14,
     color: Colors.dark.secondaryText,
+    fontWeight: '500',
   },
-  featuresContainer: {
-    marginBottom: 20,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  featureText: {
-    fontSize: 14,
-    color: Colors.dark.text,
-    marginLeft: 8,
+  buttonContainer: {
+    padding: 20,
+    paddingTop: 0,
   },
   selectButton: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
   },
   selectButtonGradient: {
-    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
   },
   selectButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  viewButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.dark.text,
-  },
 });
-
-export default HeadphoneComparison;
