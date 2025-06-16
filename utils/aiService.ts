@@ -22,6 +22,7 @@ export const generateAIResponse = async (prompt: string): Promise<{ text: string
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'CorzoAI/1.0',
+        'Content-Type': 'application/json',
       }
     });
     
@@ -104,6 +105,9 @@ const getIntelligentResponse = (prompt: string): string => {
     }
     if (lowerPrompt.includes('wireless') || lowerPrompt.includes('bluetooth')) {
       return "For wireless headphones, I recommend the JBL Tune 510BT with Pure Bass sound and 40-hour battery, or the Sony WH-CH720N with noise cancellation. Both offer excellent connectivity and sound quality. Would you like to compare their features?";
+    }
+    if (lowerPrompt.includes('compare') || lowerPrompt.includes('best')) {
+      return "Let me show you a detailed comparison of the best headphones in your budget range with pros, cons, and expert reviews.";
     }
     return "I can help you find the perfect headphones! Are you looking for wireless, wired, gaming, or studio headphones? What's your budget range?";
   }

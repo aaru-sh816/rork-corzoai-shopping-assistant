@@ -74,28 +74,30 @@ export const textToSpeech = async (text: string): Promise<void> => {
   try {
     if (Platform.OS === 'web') {
       // Use Web Speech API for web
-      const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Configure voice settings
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      // Try to use a female voice if available
-      const voices = synth.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('female') || 
-        voice.name.toLowerCase().includes('samantha') ||
-        voice.name.toLowerCase().includes('karen')
-      );
-      
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Configure voice settings
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        // Try to use a female voice if available
+        const voices = synth.getVoices();
+        const femaleVoice = voices.find(voice => 
+          voice.name.toLowerCase().includes('female') || 
+          voice.name.toLowerCase().includes('samantha') ||
+          voice.name.toLowerCase().includes('karen')
+        );
+        
+        if (femaleVoice) {
+          utterance.voice = femaleVoice;
+        }
+        
+        synth.speak(utterance);
+        return;
       }
-      
-      synth.speak(utterance);
-      return;
     }
 
     // Try ElevenLabs for high-quality voice synthesis
@@ -135,7 +137,6 @@ export const textToSpeech = async (text: string): Promise<void> => {
       language: 'en-US',
       pitch: 1.1,
       rate: 0.9,
-      quality: Speech.Quality.Enhanced,
     });
 
   } catch (error) {

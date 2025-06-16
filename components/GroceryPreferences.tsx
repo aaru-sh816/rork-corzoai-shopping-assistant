@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Info, PlusCircle, ShoppingCart, Sparkles } from 'lucide-react-native';
+import { Info, ShoppingCart, Sparkles, Plus, Minus } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -13,15 +13,35 @@ interface GroceryPreferencesProps {
 
 const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
   const [preferences, setPreferences] = useState({
-    onion: '250 g',
-    garlic: '100 g',
-    tomato: '500 g',
+    onion: { weight: '250 g', quantity: 1 },
+    garlic: { weight: '100 g', quantity: 1 },
+    tomato: { weight: '500 g', quantity: 1 },
   });
 
-  const handlePreferenceChange = (type: string, value: string) => {
+  const [estimatedTotal, setEstimatedTotal] = useState(61);
+
+  const handlePreferenceChange = (type: string, field: string, value: any) => {
     setPreferences(prev => ({
       ...prev,
-      [type]: value,
+      [type]: {
+        ...prev[type as keyof typeof prev],
+        [field]: value,
+      },
+    }));
+    
+    // Update estimated total (simplified calculation)
+    const basePrice = type === 'onion' ? 29 : type === 'garlic' ? 18 : 14;
+    const weightMultiplier = value.includes('1 kg') ? 4 : value.includes('500 g') ? 2 : 1;
+    // This is a simplified calculation - in real app would be more complex
+  };
+
+  const handleQuantityChange = (type: string, delta: number) => {
+    setPreferences(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type as keyof typeof prev],
+        quantity: Math.max(1, prev[type as keyof typeof prev].quantity + delta),
+      },
     }));
   };
 
@@ -29,126 +49,121 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
     onComplete(preferences);
   };
 
+  const weightOptions = {
+    onion: ['250 g', '500 g', '1 kg', '2 kg'],
+    garlic: ['100 g', '200 g', '500 g'],
+    tomato: ['250 g', '500 g', '1 kg', '2 kg'],
+  };
+
+  const getItemPrice = (type: string) => {
+    const basePrices = { onion: 29, garlic: 18, tomato: 14 };
+    return basePrices[type as keyof typeof basePrices] || 0;
+  };
+
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.queryText}>{query}</Text>
+        <View style={styles.queryContainer}>
+          <Text style={styles.queryText}>{query}</Text>
+        </View>
         <View style={styles.divider} />
       </View>
       
-      <Text style={styles.heading}>Select your preferences</Text>
+      {/* Title */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.heading}>Select your preferences</Text>
+        <Text style={styles.subheading}>Customize quantities and get the best prices</Text>
+      </View>
       
       <ScrollView style={styles.preferencesContainer} showsVerticalScrollIndicator={false}>
-        {/* Onion Weight */}
-        <View style={styles.preferenceSection}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.sectionTitle}>Onion Weight</Text>
-            <TouchableOpacity style={styles.infoButton}>
-              <Info size={18} color={Colors.dark.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.optionsContainer}>
-            {['250 g', '500 g', '1 kg', '2 kg'].map((option) => (
-              <TouchableOpacity
-                key={`onion-${option}`}
-                style={[
-                  styles.optionButton,
-                  preferences.onion === option && styles.selectedOption
-                ]}
-                onPress={() => handlePreferenceChange('onion', option)}
-              >
-                <Text 
-                  style={[
-                    styles.optionText,
-                    preferences.onion === option && styles.selectedOptionText
-                  ]}
-                >
-                  {option}
+        {Object.entries(preferences).map(([type, pref]) => (
+          <View key={type} style={styles.preferenceSection}>
+            {/* Item Header */}
+            <View style={styles.itemHeader}>
+              <View style={styles.itemTitleContainer}>
+                <Text style={styles.itemTitle}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
                 </Text>
+                <View style={styles.priceTag}>
+                  <Text style={styles.priceText}>₹{getItemPrice(type)}</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.infoButton}>
+                <Info size={16} color={Colors.dark.accent} />
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        
-        <View style={styles.sectionDivider} />
-        
-        {/* Garlic Weight */}
-        <View style={styles.preferenceSection}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.sectionTitle}>Garlic Weight</Text>
-            <TouchableOpacity style={styles.infoButton}>
-              <Info size={18} color={Colors.dark.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.optionsContainer}>
-            {['100 g', '200 g', '500 g'].map((option) => (
-              <TouchableOpacity
-                key={`garlic-${option}`}
-                style={[
-                  styles.optionButton,
-                  preferences.garlic === option && styles.selectedOption
-                ]}
-                onPress={() => handlePreferenceChange('garlic', option)}
-              >
-                <Text 
-                  style={[
-                    styles.optionText,
-                    preferences.garlic === option && styles.selectedOptionText
-                  ]}
+            </View>
+            
+            {/* Weight Selection */}
+            <View style={styles.weightSection}>
+              <Text style={styles.sectionLabel}>Weight</Text>
+              <View style={styles.optionsContainer}>
+                {weightOptions[type as keyof typeof weightOptions].map((option) => (
+                  <TouchableOpacity
+                    key={`${type}-${option}`}
+                    style={[
+                      styles.optionButton,
+                      pref.weight === option && styles.selectedOption
+                    ]}
+                    onPress={() => handlePreferenceChange(type, 'weight', option)}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        pref.weight === option && styles.selectedOptionText
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            
+            {/* Quantity Selection */}
+            <View style={styles.quantitySection}>
+              <Text style={styles.sectionLabel}>Quantity</Text>
+              <View style={styles.quantityControls}>
+                <TouchableOpacity 
+                  style={styles.quantityButton}
+                  onPress={() => handleQuantityChange(type, -1)}
                 >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        
-        <View style={styles.sectionDivider} />
-        
-        {/* Tomato Quantity */}
-        <View style={styles.preferenceSection}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.sectionTitle}>Tomato Quantity</Text>
-            <TouchableOpacity style={styles.infoButton}>
-              <Info size={18} color={Colors.dark.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.optionsContainer}>
-            {['250 g', '500 g', '1 kg', '2 kg'].map((option) => (
-              <TouchableOpacity
-                key={`tomato-${option}`}
-                style={[
-                  styles.optionButton,
-                  preferences.tomato === option && styles.selectedOption
-                ]}
-                onPress={() => handlePreferenceChange('tomato', option)}
-              >
-                <Text 
-                  style={[
-                    styles.optionText,
-                    preferences.tomato === option && styles.selectedOptionText
-                  ]}
+                  <Minus size={16} color={Colors.dark.text} />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{pref.quantity}</Text>
+                <TouchableOpacity 
+                  style={styles.quantityButton}
+                  onPress={() => handleQuantityChange(type, 1)}
                 >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Plus size={16} color={Colors.dark.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
+        ))}
         
-        <View style={styles.sectionDivider} />
+        {/* Estimated Total */}
+        <View style={styles.totalSection}>
+          <LinearGradient
+            colors={['rgba(52, 211, 153, 0.1)', 'rgba(52, 211, 153, 0.05)']}
+            style={styles.totalContainer}
+          >
+            <View style={styles.totalHeader}>
+              <Text style={styles.totalLabel}>Estimated Total</Text>
+              <Text style={styles.totalAmount}>₹{estimatedTotal}</Text>
+            </View>
+            <Text style={styles.totalSubtext}>Best price on Blinkit • Delivery in 10 mins</Text>
+          </LinearGradient>
+        </View>
         
         {/* Suggest More Button */}
         <TouchableOpacity style={styles.suggestButton}>
           <LinearGradient
-            colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+            colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)']}
             style={styles.suggestButtonGradient}
           >
             <Sparkles size={20} color={Colors.dark.accent} />
-            <Text style={styles.suggestButtonText}>Suggest more preferences</Text>
+            <Text style={styles.suggestButtonText}>Suggest more items</Text>
           </LinearGradient>
         </TouchableOpacity>
         
@@ -181,17 +196,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   header: {
     padding: 20,
-    paddingBottom: 0,
+    paddingBottom: 16,
+  },
+  queryContainer: {
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   queryText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.text,
+    color: Colors.dark.accent,
     textAlign: 'center',
-    marginBottom: 16,
   },
   divider: {
     height: 4,
@@ -200,52 +224,88 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 2,
   },
+  titleContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   heading: {
     fontSize: 24,
     fontWeight: '700',
     color: Colors.dark.text,
-    marginBottom: 24,
+    marginBottom: 8,
     textAlign: 'center',
-    paddingHorizontal: 20,
+  },
+  subheading: {
+    fontSize: 16,
+    color: Colors.dark.secondaryText,
+    textAlign: 'center',
   },
   preferencesContainer: {
     maxHeight: 500,
     paddingHorizontal: 20,
   },
   preferenceSection: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  titleContainer: {
+  itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: {
+  itemTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  itemTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.dark.text,
   },
+  priceTag: {
+    backgroundColor: 'rgba(52, 211, 153, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.dark.accent,
+  },
   infoButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  weightSection: {
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.dark.secondaryText,
+    marginBottom: 8,
   },
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
   },
   optionButton: {
     backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 24,
-    minWidth: (width - 80) / 4,
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -255,30 +315,77 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: Colors.dark.text,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
   selectedOptionText: {
     color: '#000000',
     fontWeight: '600',
   },
-  sectionDivider: {
-    height: 1,
+  quantitySection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    marginVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.dark.text,
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  totalSection: {
+    marginBottom: 16,
+  },
+  totalContainer: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.2)',
+  },
+  totalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.dark.text,
+  },
+  totalAmount: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.dark.accent,
+  },
+  totalSubtext: {
+    fontSize: 14,
+    color: Colors.dark.secondaryText,
   },
   suggestButton: {
-    marginTop: 8,
-    marginBottom: 24,
-    borderRadius: 24,
+    marginBottom: 16,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   suggestButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
     gap: 8,
   },
   suggestButtonText: {
@@ -287,7 +394,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   completeButton: {
-    borderRadius: 24,
+    borderRadius: 16,
     marginBottom: 20,
     overflow: 'hidden',
   },
@@ -304,3 +411,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default GroceryPreferences;

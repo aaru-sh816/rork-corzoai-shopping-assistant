@@ -216,16 +216,16 @@ export default function ChatScreen() {
     setShowPreferences(false);
     
     const preferencesText = `Selected preferences:
-• Onion: ${preferences.onion}
-• Garlic: ${preferences.garlic}  
-• Tomato: ${preferences.tomato}`;
+• Onion: ${preferences.onion.weight} (${preferences.onion.quantity}x)
+• Garlic: ${preferences.garlic.weight} (${preferences.garlic.quantity}x)
+• Tomato: ${preferences.tomato.weight} (${preferences.tomato.quantity}x)`;
     
     addMessage({ text: preferencesText, isUser: true });
     
     const responseText = `Perfect! I've added these items to your cart:
-• ${preferences.onion} Onions - ₹29
-• ${preferences.garlic} Garlic - ₹18
-• ${preferences.tomato} Tomatoes - ₹14
+• ${preferences.onion.quantity}x ${preferences.onion.weight} Onions - ₹29
+• ${preferences.garlic.quantity}x ${preferences.garlic.weight} Garlic - ₹18
+• ${preferences.tomato.quantity}x ${preferences.tomato.weight} Tomatoes - ₹14
 
 Total: ₹61 (Best price on Blinkit)
 Delivery in 10 minutes! 🚀
