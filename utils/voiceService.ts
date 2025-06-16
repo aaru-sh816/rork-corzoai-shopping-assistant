@@ -26,7 +26,6 @@ declare global {
     webkitSpeechRecognition: {
       new(): WebSpeechRecognition;
     };
-    speechSynthesis: SpeechSynthesis;
   }
 }
 

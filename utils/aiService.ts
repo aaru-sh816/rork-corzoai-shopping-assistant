@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 
-// N8N Webhook URL
-const N8N_WEBHOOK_URL = 'https://aarushjain.app.n8n.cloud/webhook-test/corzoai-premium';
+// N8N Webhook URL - Updated to the correct endpoint
+const N8N_WEBHOOK_URL = 'https://aarushjain.app.n8n.cloud/webhook-test/corzoai-ultimate';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -17,6 +17,8 @@ interface AIResponse {
   groceryItems?: boolean;
   preferences?: any;
   priceComparison?: boolean;
+  useCase?: boolean;
+  productDetail?: any;
 }
 
 export const generateAIResponse = async (prompt: string): Promise<AIResponse> => {
@@ -40,21 +42,26 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
       console.log('n8n webhook response:', response.data);
       
       // Handle different response formats from n8n
-      if (response.data.response) {
+      if (response.data.response || response.data.text) {
         return { 
-          text: response.data.response,
+          text: response.data.response || response.data.text,
           data: response.data,
-          type: response.data.type || 'general',
+          type: response.data.type || detectResponseType(prompt, response.data),
           products: response.data.products,
           groceryItems: response.data.groceryItems,
           preferences: response.data.preferences,
           priceComparison: response.data.priceComparison,
+          useCase: response.data.useCase,
+          productDetail: response.data.productDetail,
         };
       }
       
       // If it's a string response
       if (typeof response.data === 'string') {
-        return { text: response.data, type: 'general' };
+        return { 
+          text: response.data, 
+          type: detectResponseType(prompt, response.data) 
+        };
       }
       
       // If it's structured data (product comparisons, etc.)
@@ -62,11 +69,13 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
         return { 
           text: formatStructuredResponse(response.data),
           data: response.data,
-          type: response.data.type || detectResponseType(response.data),
+          type: response.data.type || detectResponseType(prompt, response.data),
           products: response.data.products,
           groceryItems: response.data.groceryItems,
           preferences: response.data.preferences,
           priceComparison: response.data.priceComparison,
+          useCase: response.data.useCase,
+          productDetail: response.data.productDetail,
         };
       }
       
@@ -74,7 +83,7 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
       return { 
         text: response.data.message || JSON.stringify(response.data),
         data: response.data,
-        type: 'general'
+        type: detectResponseType(prompt, response.data)
       };
     }
     
@@ -86,17 +95,85 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
     // Fallback to simulated intelligent responses
     return { 
       text: getIntelligentResponse(prompt),
-      type: 'general'
+      type: detectResponseType(prompt, null),
+      ...getSimulatedData(prompt)
     };
   }
 };
 
-// Helper function to detect response type
-const detectResponseType = (data: any): string => {
-  if (data.products && Array.isArray(data.products)) return 'product_comparison';
-  if (data.groceryItems) return 'grocery_preferences';
-  if (data.priceComparison) return 'price_comparison';
+// Helper function to detect response type based on query and response
+const detectResponseType = (query: string, data: any): string => {
+  const lowerQuery = query.toLowerCase();
+  
+  // Check data first if available
+  if (data) {
+    if (data.type) return data.type;
+    if (data.products && Array.isArray(data.products)) return 'headphone_comparison';
+    if (data.groceryItems) return 'grocery_preferences';
+    if (data.priceComparison) return 'price_comparison';
+    if (data.useCase) return 'use_case_selection';
+    if (data.productDetail) return 'product_detail';
+  }
+  
+  // Fallback to query analysis
+  if (lowerQuery.includes('headphone') && (lowerQuery.includes('compare') || lowerQuery.includes('under') || lowerQuery.includes('best'))) {
+    return 'headphone_comparison';
+  }
+  if ((lowerQuery.includes('grocery') || lowerQuery.includes('onion') || lowerQuery.includes('tomato') || lowerQuery.includes('garlic')) &&
+      (lowerQuery.includes('order') || lowerQuery.includes('buy'))) {
+    return 'grocery_preferences';
+  }
+  if (lowerQuery.includes('headphone') && lowerQuery.includes('10k')) {
+    return 'use_case_selection';
+  }
+  if (lowerQuery.includes('price') || lowerQuery.includes('compare')) {
+    return 'price_comparison';
+  }
+  
   return 'general';
+};
+
+// Helper function to get simulated data for fallback
+const getSimulatedData = (query: string): Partial<AIResponse> => {
+  const lowerQuery = query.toLowerCase();
+  
+  if (lowerQuery.includes('headphone') && (lowerQuery.includes('compare') || lowerQuery.includes('under') || lowerQuery.includes('best'))) {
+    return {
+      products: [
+        {
+          id: 'h1',
+          name: 'Sennheiser Accentum Wireless',
+          price: 12989,
+          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+          store: 'Amazon',
+          features: ['Impressive sound', 'Exceptional battery life', 'Noise Cancellation'],
+          cons: ['Average mic quality'],
+          rating: 4.5,
+          bestValue: true
+        }
+      ]
+    };
+  }
+  
+  if ((lowerQuery.includes('grocery') || lowerQuery.includes('onion') || lowerQuery.includes('tomato')) &&
+      (lowerQuery.includes('order') || lowerQuery.includes('buy'))) {
+    return {
+      groceryItems: true,
+      preferences: {
+        onion: ['250 g', '500 g', '1 kg', '2 kg'],
+        garlic: ['100 g', '200 g', '500 g'],
+        tomato: ['250 g', '500 g', '1 kg', '2 kg']
+      }
+    };
+  }
+  
+  if (lowerQuery.includes('headphone') && lowerQuery.includes('10k')) {
+    return {
+      useCase: true
+    };
+  }
+  
+  return {};
 };
 
 // Helper function to format structured responses from n8n
@@ -120,15 +197,19 @@ const formatStructuredResponse = (data: any): string => {
   }
   
   if (data.groceryItems) {
-    return "I can help you order groceries! Let me show you some options to customize your order.";
+    return "I'll help you order groceries! Let me show you some options to customize your order.";
   }
   
   if (data.priceComparison) {
     return "I've found the best prices across multiple stores. Let me show you the comparison.";
   }
   
+  if (data.useCase) {
+    return "What's your ideal use case for these headphones?";
+  }
+  
   // Default formatting for other structured data
-  return data.message || "I've found some great options for you. Let me show you the details.";
+  return data.message || data.response || "I've found some great options for you. Let me show you the details.";
 };
 
 const getIntelligentResponse = (prompt: string): string => {
@@ -137,15 +218,18 @@ const getIntelligentResponse = (prompt: string): string => {
   // Headphone queries
   if (lowerPrompt.includes('headphone') || lowerPrompt.includes('headphones')) {
     if (lowerPrompt.includes('under') && (lowerPrompt.includes('5000') || lowerPrompt.includes('5k'))) {
-      return "I found excellent headphones under ₹5,000! The JBL Tune 510BT offers 40-hour battery life for ₹3,499, while the boAt Rockerz 450 provides great value at ₹1,999. For true wireless, the Noise Buds VS104 at ₹1,299 offers 30-hour playtime with noise cancellation. Which type interests you most?";
+      return "I found excellent headphones under ₹5,000! Let me show you the best options with detailed comparisons.";
+    }
+    if (lowerPrompt.includes('10k') || lowerPrompt.includes('10000')) {
+      return "For headphones under ₹10,000, I need to understand your use case better to recommend the perfect option.";
     }
     if (lowerPrompt.includes('wireless') || lowerPrompt.includes('bluetooth')) {
-      return "For wireless headphones, I recommend the JBL Tune 510BT with Pure Bass sound and 40-hour battery, or the Sony WH-CH720N with noise cancellation. Both offer excellent connectivity and sound quality. Would you like to compare their features?";
+      return "For wireless headphones, I'll show you the best options with detailed comparisons across multiple stores.";
     }
     if (lowerPrompt.includes('compare') || lowerPrompt.includes('best')) {
-      return "Let me show you a detailed comparison of the best headphones in your budget range with pros, cons, and expert reviews.";
+      return "Let me show you a detailed comparison of the best headphones in your budget range.";
     }
-    return "I can help you find the perfect headphones! Are you looking for wireless, wired, gaming, or studio headphones? What's your budget range?";
+    return "I can help you find the perfect headphones! Let me show you some great options.";
   }
   
   // Protein queries
@@ -158,7 +242,7 @@ const getIntelligentResponse = (prompt: string): string => {
   
   // Grocery queries
   if (lowerPrompt.includes('tomato') || lowerPrompt.includes('onion') || lowerPrompt.includes('garlic') || lowerPrompt.includes('grocery')) {
-    return "I can help you order fresh groceries! Let me show you the best prices and let you customize quantities for items like tomatoes, onions, and garlic.";
+    return "I'll help you order fresh groceries! Let me show you customization options for the best prices.";
   }
   
   // Shopping and deals
@@ -172,5 +256,5 @@ const getIntelligentResponse = (prompt: string): string => {
   }
   
   // Default intelligent response
-  return "I'm your AI shopping assistant! I can help you find the best products, compare prices across stores, get exclusive deals, and make smart purchasing decisions. What are you looking to buy today?";
+  return "I'm your superhuman AI shopping assistant! I can help you find the best products, compare prices across stores, get exclusive deals, and make smart purchasing decisions. What are you looking to buy today?";
 };

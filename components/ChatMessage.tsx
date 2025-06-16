@@ -14,7 +14,7 @@ interface ChatMessageProps {
 const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
   // Ensure message is always a string
   const messageText = typeof message === 'string' ? message : 
-                     typeof message === 'object' && message?.text ? message.text :
+                     typeof message === 'object' && message !== null && 'text' in message ? (message as any).text :
                      JSON.stringify(message);
 
   return (
@@ -25,10 +25,7 @@ const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
             colors={[Colors.dark.accent, Colors.dark.accentDark]}
             style={styles.avatarGradient}
           >
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' }} 
-              style={styles.avatar} 
-            />
+            <Text style={styles.avatarText}>Z</Text>
           </LinearGradient>
         </View>
       )}
@@ -82,9 +79,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatar: {
-    width: 36,
-    height: 36,
+  avatarText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
   },
   bubble: {
     borderRadius: 20,
@@ -96,8 +94,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   botBubble: {
-    backgroundColor: Colors.dark.card,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   message: {
     fontSize: 16,
@@ -105,9 +105,11 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     color: '#000000',
+    fontWeight: '500',
   },
   botMessage: {
     color: Colors.dark.text,
+    fontWeight: '400',
   },
   timestamp: {
     fontSize: 12,

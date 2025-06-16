@@ -285,7 +285,7 @@ Would you like to checkout now?`;
     setResponseData(null);
     
     addMessage({
-      text: "Hi! I'm your AI shopping assistant. I can help you find products, compare prices, and get the best deals. What are you looking for today?",
+      text: "Hi! I'm your superhuman AI shopping assistant. I can help you find products, compare prices, and get the best deals. What are you looking for today?",
       isUser: false
     });
   };
