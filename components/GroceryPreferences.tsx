@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Info, ShoppingCart, Sparkles, Plus, Minus } from 'lucide-react-native';
+import { Info, ShoppingCart, Sparkles, Plus, Minus, Check } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -115,6 +115,9 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
                     >
                       {option}
                     </Text>
+                    {pref.weight === option && (
+                      <Check size={14} color="#000000" style={styles.checkIcon} />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -125,12 +128,15 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
               <Text style={styles.sectionLabel}>Quantity</Text>
               <View style={styles.quantityControls}>
                 <TouchableOpacity 
-                  style={styles.quantityButton}
+                  style={[styles.quantityButton, pref.quantity <= 1 && styles.disabledButton]}
                   onPress={() => handleQuantityChange(type, -1)}
+                  disabled={pref.quantity <= 1}
                 >
-                  <Minus size={16} color={Colors.dark.text} />
+                  <Minus size={16} color={pref.quantity <= 1 ? Colors.dark.secondaryText : Colors.dark.text} />
                 </TouchableOpacity>
-                <Text style={styles.quantityText}>{pref.quantity}</Text>
+                <View style={styles.quantityDisplay}>
+                  <Text style={styles.quantityText}>{pref.quantity}</Text>
+                </View>
                 <TouchableOpacity 
                   style={styles.quantityButton}
                   onPress={() => handleQuantityChange(type, 1)}
@@ -308,6 +314,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   selectedOption: {
     backgroundColor: Colors.dark.accent,
@@ -321,6 +330,9 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: '#000000',
     fontWeight: '600',
+  },
+  checkIcon: {
+    marginLeft: 4,
   },
   quantitySection: {
     flexDirection: 'row',
@@ -340,11 +352,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  quantityDisplay: {
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 40,
+    alignItems: 'center',
+  },
   quantityText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.text,
-    minWidth: 20,
+    color: Colors.dark.accent,
     textAlign: 'center',
   },
   totalSection: {

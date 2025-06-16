@@ -271,3 +271,47 @@ MIT License - see LICENSE file for details.
 ---
 
 Built with ❤️ for the future of shopping
+
+## 🔧 N8N Workflow Suggestions
+
+### Advanced Workflow Structure
+
+1. **HTTP Trigger** → **Query Parser** → **Intent Classification** → **Response Router**
+
+2. **Intent Classification Node**:
+```javascript
+function classifyIntent(query) {
+  const intents = {
+    product_search: ['find', 'search', 'show me', 'looking for'],
+    price_comparison: ['compare', 'price', 'cheapest', 'best deal'],
+    grocery_order: ['order', 'buy', 'grocery', 'vegetables'],
+    product_details: ['details', 'specs', 'features', 'review'],
+    use_case: ['for', 'use case', 'purpose', 'need']
+  };
+  
+  for (const [intent, keywords] of Object.entries(intents)) {
+    if (keywords.some(keyword => query.toLowerCase().includes(keyword))) {
+      return intent;
+    }
+  }
+  return 'general';
+}
+```
+
+3. **Response Router**: Routes to different processing nodes based on intent
+
+4. **Product Database Integration**: Connect to real product APIs
+
+5. **Price Monitoring**: Real-time price tracking across stores
+
+6. **User Context**: Store user preferences and history
+
+### Recommended N8N Nodes
+- **HTTP Request**: For external API calls
+- **Code**: For complex logic processing
+- **Switch**: For routing based on conditions
+- **Merge**: For combining data from multiple sources
+- **Schedule Trigger**: For periodic price updates
+- **Webhook**: For real-time responses
+
+This creates a truly intelligent shopping assistant that can handle complex queries and provide personalized recommendations.

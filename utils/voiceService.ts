@@ -6,12 +6,19 @@ import * as Speech from 'expo-speech';
 const ELEVENLABS_API_KEY = 'sk_4f8c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c';
 const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Bella voice
 
+// Web Speech API types
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export const startVoiceRecognition = async (): Promise<{ isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
       // Check if speech recognition is available
-      const SpeechRecognition = (window as any).SpeechRecognition || 
-                               (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       if (!SpeechRecognition) {
         console.log('Speech recognition not supported on this browser');
@@ -44,8 +51,7 @@ export const startVoiceRecognition = async (): Promise<{ isListening: boolean }>
 export const stopVoiceRecognition = async (): Promise<{ text: string; isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
-      const SpeechRecognition = (window as any).SpeechRecognition || 
-                               (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       if (SpeechRecognition) {
         // In a real implementation, you would handle the recognition result
