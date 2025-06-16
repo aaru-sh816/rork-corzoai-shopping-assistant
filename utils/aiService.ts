@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import axios from 'axios';
 
 // N8N Webhook URL
-const N8N_WEBHOOK_URL = 'https://aarushjain.app.n8n.cloud/webhook-test/corzoai-ultimate';
+const N8N_WEBHOOK_URL = 'https://aarushjain.app.n8n.cloud/webhook-test/corzoai-premium';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
