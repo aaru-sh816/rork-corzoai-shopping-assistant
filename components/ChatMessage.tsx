@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 16,
+    lineHeight: 22,
   },
   userMessage: {
     color: '#000000',

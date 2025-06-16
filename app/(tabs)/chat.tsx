@@ -10,7 +10,8 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
-  Easing
+  Easing,
+  Dimensions
 } from 'react-native';
 import { ArrowLeft, Send, Mic } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,8 @@ import { useAppStore } from '@/store/useAppStore';
 import { generateAIResponse } from '@/utils/aiService';
 import { startVoiceRecognition, stopVoiceRecognition, textToSpeech } from '@/utils/voiceService';
 import HeadphoneComparison from '@/components/HeadphoneComparison';
+
+const { width } = Dimensions.get('window');
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -108,6 +111,7 @@ export default function ChatScreen() {
     }
     
     try {
+      // Call the n8n webhook with the user's message
       const response = await generateAIResponse(userMessage);
       addMessage({ text: response, isUser: false });
       

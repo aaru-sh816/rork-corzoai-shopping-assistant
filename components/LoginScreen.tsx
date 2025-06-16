@@ -145,7 +145,7 @@ export const LoginScreen = () => {
       </Animated.View>
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

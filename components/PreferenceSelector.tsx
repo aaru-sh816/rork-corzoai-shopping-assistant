@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
+
+const { width } = Dimensions.get('window');
+const optionWidth = (width - 80) / 4; // Calculate option width based on screen size
 
 interface PreferenceOption {
   value: string;
@@ -38,6 +41,7 @@ const PreferenceSelector = ({ title, options, onSelect, initialValue }: Preferen
             key={option.value}
             style={[
               styles.optionButton,
+              { width: optionWidth },
               selectedValue === option.value && styles.selectedOption,
             ]}
             onPress={() => handleSelect(option.value)}
@@ -59,7 +63,7 @@ const PreferenceSelector = ({ title, options, onSelect, initialValue }: Preferen
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -75,15 +79,17 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'flex-start',
+    gap: 8,
   },
   optionButton: {
     backgroundColor: '#2A2A2A',
-    paddingHorizontal: 20,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     borderRadius: 24,
-    minWidth: 80,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   selectedOption: {
     backgroundColor: Colors.dark.accent,
@@ -92,6 +98,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'center',
   },
   selectedOptionText: {
     color: '#000000',

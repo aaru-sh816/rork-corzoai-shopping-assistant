@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { PlusCircle } from 'lucide-react-native';
+import { Info, PlusCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import PreferenceSelector from './PreferenceSelector';
 
@@ -35,7 +35,7 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
       
       <Text style={styles.heading}>Select your preferences</Text>
       
-      <ScrollView style={styles.preferencesContainer}>
+      <ScrollView style={styles.preferencesContainer} showsVerticalScrollIndicator={false}>
         <PreferenceSelector
           title="Onion Weight"
           options={[
@@ -92,10 +92,11 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.dark.background,
+    backgroundColor: Colors.dark.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    marginHorizontal: 16,
   },
   queryText: {
     fontSize: 18,

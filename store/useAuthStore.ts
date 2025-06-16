@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { trpcClient } from '@/lib/trpc';
 
 interface User {
   id: string;
@@ -40,6 +41,26 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
+          // Try to use the backend API first
+          try {
+            const result = await trpcClient.auth.login.mutate({ phoneNumber });
+            
+            if (result.success) {
+              // Store OTP for verification (in a real app, this would be sent to the user's phone)
+              set({ 
+                storedOTP: result.otp || '',
+                user: {
+                  id: '',
+                  phoneNumber: phoneNumber
+                },
+                isLoading: false
+              });
+              return;
+            }
+          } catch (apiError) {
+            console.log('Backend API failed, falling back to direct WhatsApp API:', apiError);
+          }
+          
           // Generate OTP
           const otp = generateOTP();
           
@@ -63,11 +84,27 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Failed to send OTP');
           }
 
-          set({ isLoading: false });
+          // Update user with phone number
+          set({
+            user: {
+              id: '',
+              phoneNumber: phoneNumber
+            },
+            isLoading: false
+          });
         } catch (error) {
+          console.error('Error sending OTP:', error);
+          
+          // For demo purposes, still store the OTP even if the API call fails
+          const otp = generateOTP();
           set({ 
-            isLoading: false, 
-            error: error instanceof Error ? error.message : 'Failed to send OTP' 
+            storedOTP: otp,
+            user: {
+              id: '',
+              phoneNumber: phoneNumber
+            },
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to send OTP. For demo, use OTP: ' + otp
           });
         }
       },
@@ -75,6 +112,30 @@ export const useAuthStore = create<AuthState>()(
       verifyOTP: async (otp: string) => {
         try {
           set({ isLoading: true, error: null });
+          
+          // Try to use the backend API first
+          try {
+            const phoneNumber = get().user?.phoneNumber || '';
+            const result = await trpcClient.auth.verify.mutate({ 
+              phoneNumber, 
+              otp 
+            });
+            
+            if (result.success) {
+              set({ 
+                isAuthenticated: true,
+                user: result.user || {
+                  id: Date.now().toString(),
+                  phoneNumber: phoneNumber,
+                },
+                storedOTP: '',
+                isLoading: false,
+              });
+              return;
+            }
+          } catch (apiError) {
+            console.log('Backend API failed, falling back to direct verification:', apiError);
+          }
           
           const { storedOTP } = get();
           

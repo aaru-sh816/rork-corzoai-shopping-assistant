@@ -50,6 +50,12 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
           return response.data;
         }
         
+        // If it's a product comparison or structured data
+        if (response.data.products || response.data.comparisons) {
+          // Process structured data and return formatted text
+          return formatStructuredResponse(response.data);
+        }
+        
         return JSON.stringify(response.data);
       }
       
@@ -108,6 +114,31 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
     console.error('Error generating AI response:', error);
     return getSimulatedResponse(prompt);
   }
+};
+
+// Helper function to format structured responses from n8n
+const formatStructuredResponse = (data: any): string => {
+  if (data.products && Array.isArray(data.products)) {
+    // Format product comparison data
+    const products = data.products;
+    let response = "Here's what I found for you:\n\n";
+    
+    products.forEach((product: any, index: number) => {
+      response += `${index + 1}. ${product.name}\n`;
+      response += `   Price: ₹${product.price}\n`;
+      response += `   Store: ${product.store}\n`;
+      if (product.features && Array.isArray(product.features)) {
+        response += `   Features: ${product.features.join(', ')}\n`;
+      }
+      response += '\n';
+    });
+    
+    response += "Would you like more details on any of these products?";
+    return response;
+  }
+  
+  // Default formatting for other structured data
+  return JSON.stringify(data);
 };
 
 const getSimulatedResponse = (prompt: string): string => {
