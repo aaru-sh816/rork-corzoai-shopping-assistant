@@ -9,7 +9,17 @@ interface Message {
   content: string | Array<{ type: 'text' | 'image'; text?: string; image?: string }>;
 }
 
-export const generateAIResponse = async (prompt: string): Promise<{ text: string; data?: any }> => {
+interface AIResponse {
+  text: string;
+  data?: any;
+  type?: string;
+  products?: any[];
+  groceryItems?: boolean;
+  preferences?: any;
+  priceComparison?: boolean;
+}
+
+export const generateAIResponse = async (prompt: string): Promise<AIResponse> => {
   try {
     // Call n8n webhook with the user's message
     const encodedMessage = encodeURIComponent(prompt);
@@ -33,27 +43,38 @@ export const generateAIResponse = async (prompt: string): Promise<{ text: string
       if (response.data.response) {
         return { 
           text: response.data.response,
-          data: response.data
+          data: response.data,
+          type: response.data.type || 'general',
+          products: response.data.products,
+          groceryItems: response.data.groceryItems,
+          preferences: response.data.preferences,
+          priceComparison: response.data.priceComparison,
         };
       }
       
       // If it's a string response
       if (typeof response.data === 'string') {
-        return { text: response.data };
+        return { text: response.data, type: 'general' };
       }
       
       // If it's structured data (product comparisons, etc.)
       if (response.data.products || response.data.comparisons || response.data.groceryItems) {
         return { 
           text: formatStructuredResponse(response.data),
-          data: response.data
+          data: response.data,
+          type: response.data.type || detectResponseType(response.data),
+          products: response.data.products,
+          groceryItems: response.data.groceryItems,
+          preferences: response.data.preferences,
+          priceComparison: response.data.priceComparison,
         };
       }
       
       // Default handling
       return { 
         text: response.data.message || JSON.stringify(response.data),
-        data: response.data
+        data: response.data,
+        type: 'general'
       };
     }
     
@@ -63,8 +84,19 @@ export const generateAIResponse = async (prompt: string): Promise<{ text: string
     console.error('Error calling n8n webhook:', error);
     
     // Fallback to simulated intelligent responses
-    return { text: getIntelligentResponse(prompt) };
+    return { 
+      text: getIntelligentResponse(prompt),
+      type: 'general'
+    };
   }
+};
+
+// Helper function to detect response type
+const detectResponseType = (data: any): string => {
+  if (data.products && Array.isArray(data.products)) return 'product_comparison';
+  if (data.groceryItems) return 'grocery_preferences';
+  if (data.priceComparison) return 'price_comparison';
+  return 'general';
 };
 
 // Helper function to format structured responses from n8n
@@ -89,6 +121,10 @@ const formatStructuredResponse = (data: any): string => {
   
   if (data.groceryItems) {
     return "I can help you order groceries! Let me show you some options to customize your order.";
+  }
+  
+  if (data.priceComparison) {
+    return "I've found the best prices across multiple stores. Let me show you the comparison.";
   }
   
   // Default formatting for other structured data

@@ -135,38 +135,55 @@ export default function ChatScreen() {
       // Call the n8n webhook
       const response = await generateAIResponse(userMessage);
       
-      // Handle different types of responses
+      // Handle different types of responses based on n8n output
       if (response.data) {
         setResponseData(response.data);
         
-        // Check for grocery items
-        if (response.data.groceryItems || 
-            (lowerMessage.includes('grocery') || lowerMessage.includes('onion') || 
-             lowerMessage.includes('tomato') || lowerMessage.includes('garlic')) &&
-            (lowerMessage.includes('order') || lowerMessage.includes('buy'))) {
-          setCurrentQuery(userMessage);
-          setShowPreferences(true);
-          addMessage({ text: "I'll help you order groceries! Let me show you some customization options.", isUser: false });
-          setIsLoading(false);
-          return;
-        }
-        
-        // Check for headphone comparison
-        if (response.data.products || 
-            (lowerMessage.includes('headphone') && 
-             (lowerMessage.includes('compare') || lowerMessage.includes('under') || lowerMessage.includes('best')))) {
-          setShowHeadphoneComparison(true);
-          addMessage({ text: response.text, isUser: false });
-          setIsLoading(false);
-          return;
-        }
-        
-        // Check for use case selection (headphones with budget)
-        if (lowerMessage.includes('headphone') && lowerMessage.includes('10k')) {
-          setShowUseCaseSelector(true);
-          addMessage({ text: "What's your ideal use case for these headphones?", isUser: false });
-          setIsLoading(false);
-          return;
+        // Check response type from n8n
+        switch (response.type) {
+          case 'grocery_preferences':
+          case 'grocery_order':
+            if (response.groceryItems || 
+                (lowerMessage.includes('grocery') || lowerMessage.includes('onion') || 
+                 lowerMessage.includes('tomato') || lowerMessage.includes('garlic')) &&
+                (lowerMessage.includes('order') || lowerMessage.includes('buy'))) {
+              setCurrentQuery(userMessage);
+              setShowPreferences(true);
+              addMessage({ text: "I'll help you order groceries! Let me show you some customization options.", isUser: false });
+              setIsLoading(false);
+              return;
+            }
+            break;
+            
+          case 'headphone_comparison':
+          case 'product_comparison':
+            if (response.products || 
+                (lowerMessage.includes('headphone') && 
+                 (lowerMessage.includes('compare') || lowerMessage.includes('under') || lowerMessage.includes('best')))) {
+              setShowHeadphoneComparison(true);
+              addMessage({ text: response.text, isUser: false });
+              setIsLoading(false);
+              return;
+            }
+            break;
+            
+          case 'use_case_selection':
+            if (lowerMessage.includes('headphone') && lowerMessage.includes('10k')) {
+              setShowUseCaseSelector(true);
+              addMessage({ text: "What's your ideal use case for these headphones?", isUser: false });
+              setIsLoading(false);
+              return;
+            }
+            break;
+            
+          case 'price_comparison':
+            if (response.priceComparison) {
+              // Handle price comparison UI
+              addMessage({ text: response.text, isUser: false });
+              setIsLoading(false);
+              return;
+            }
+            break;
         }
       }
       

@@ -12,6 +12,11 @@ interface ChatMessageProps {
 }
 
 const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
+  // Ensure message is always a string
+  const messageText = typeof message === 'string' ? message : 
+                     typeof message === 'object' && message?.text ? message.text :
+                     JSON.stringify(message);
+
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.botContainer]}>
       {!isUser && (
@@ -36,14 +41,14 @@ const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
           style={[styles.bubble, styles.userBubble]}
         >
           <Text style={[styles.message, styles.userMessage]}>
-            {message}
+            {messageText}
           </Text>
           {timestamp && <Text style={styles.userTimestamp}>{timestamp}</Text>}
         </LinearGradient>
       ) : (
         <View style={[styles.bubble, styles.botBubble]}>
           <Text style={[styles.message, styles.botMessage]}>
-            {message}
+            {messageText}
           </Text>
           {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
         </View>

@@ -264,6 +264,47 @@ The app intelligently processes different types of queries:
    - Purchase pattern analysis
    - Recommendation optimization
 
+## 📱 Overlay Functionality
+
+### System-Level Integration (Advanced)
+
+For overlay functionality over other apps (Amazon, Flipkart, etc.), you would need:
+
+1. **Native Module Development**
+   - Custom Android overlay permissions
+   - iOS screen recording/sharing capabilities
+   - System-level hooks for app detection
+
+2. **Implementation Approach**
+   ```javascript
+   // This would require custom native modules
+   import { OverlayManager } from './native-modules/OverlayManager';
+   
+   // Detect when user opens shopping apps
+   OverlayManager.detectApp(['com.amazon.mShop.android.shopping', 'com.flipkart.android'])
+     .then((appInfo) => {
+       // Show CorzoAI overlay
+       OverlayManager.showOverlay({
+         component: 'PriceComparison',
+         position: 'bottom',
+         data: { currentApp: appInfo.packageName }
+       });
+     });
+   ```
+
+3. **Required Permissions**
+   - `SYSTEM_ALERT_WINDOW` (Android)
+   - Screen recording permissions (iOS)
+   - Accessibility service permissions
+
+4. **Alternative Approaches**
+   - Browser extension for web shopping
+   - Deep linking integration
+   - Share sheet extensions
+   - Keyboard extensions
+
+**Note**: This functionality requires significant native development and may face App Store restrictions.
+
 ## 📄 License
 
 MIT License - see LICENSE file for details.
@@ -272,46 +313,125 @@ MIT License - see LICENSE file for details.
 
 Built with ❤️ for the future of shopping
 
-## 🔧 N8N Workflow Suggestions
+## 🔧 Advanced N8N Workflow Suggestions
 
-### Advanced Workflow Structure
-
-1. **HTTP Trigger** → **Query Parser** → **Intent Classification** → **Response Router**
-
-2. **Intent Classification Node**:
+### 1. Enhanced Query Classification
 ```javascript
 function classifyIntent(query) {
   const intents = {
-    product_search: ['find', 'search', 'show me', 'looking for'],
-    price_comparison: ['compare', 'price', 'cheapest', 'best deal'],
-    grocery_order: ['order', 'buy', 'grocery', 'vegetables'],
-    product_details: ['details', 'specs', 'features', 'review'],
-    use_case: ['for', 'use case', 'purpose', 'need']
+    product_search: {
+      keywords: ['find', 'search', 'show me', 'looking for'],
+      confidence: 0.8
+    },
+    price_comparison: {
+      keywords: ['compare', 'price', 'cheapest', 'best deal', 'under'],
+      confidence: 0.9
+    },
+    grocery_order: {
+      keywords: ['order', 'buy', 'grocery', 'vegetables', 'onion', 'tomato'],
+      confidence: 0.85
+    },
+    product_details: {
+      keywords: ['details', 'specs', 'features', 'review'],
+      confidence: 0.7
+    }
   };
   
-  for (const [intent, keywords] of Object.entries(intents)) {
-    if (keywords.some(keyword => query.toLowerCase().includes(keyword))) {
-      return intent;
+  let bestMatch = { intent: 'general', confidence: 0 };
+  
+  for (const [intent, config] of Object.entries(intents)) {
+    const matches = config.keywords.filter(keyword => 
+      query.toLowerCase().includes(keyword)
+    ).length;
+    
+    const confidence = (matches / config.keywords.length) * config.confidence;
+    
+    if (confidence > bestMatch.confidence) {
+      bestMatch = { intent, confidence };
     }
   }
-  return 'general';
+  
+  return bestMatch;
 }
 ```
 
-3. **Response Router**: Routes to different processing nodes based on intent
+### 2. Dynamic Product Database Integration
+```javascript
+// Connect to real-time product APIs
+const productSources = {
+  amazon: 'https://api.amazon.com/products',
+  flipkart: 'https://api.flipkart.com/search',
+  myntra: 'https://api.myntra.com/products'
+};
 
-4. **Product Database Integration**: Connect to real product APIs
+async function fetchRealTimeProducts(query, budget) {
+  const results = await Promise.all(
+    Object.entries(productSources).map(async ([store, api]) => {
+      try {
+        const response = await fetch(`${api}?q=${query}&budget=${budget}`);
+        return { store, products: await response.json() };
+      } catch (error) {
+        return { store, products: [], error: error.message };
+      }
+    })
+  );
+  
+  return results;
+}
+```
 
-5. **Price Monitoring**: Real-time price tracking across stores
+### 3. Personalization Engine
+```javascript
+// User preference learning
+function updateUserPreferences(userId, interaction) {
+  const preferences = getUserPreferences(userId);
+  
+  // Update based on user behavior
+  if (interaction.type === 'product_view') {
+    preferences.categories[interaction.category] = 
+      (preferences.categories[interaction.category] || 0) + 1;
+  }
+  
+  if (interaction.type === 'price_range') {
+    preferences.budgetRange = {
+      min: Math.min(preferences.budgetRange.min, interaction.price),
+      max: Math.max(preferences.budgetRange.max, interaction.price)
+    };
+  }
+  
+  saveUserPreferences(userId, preferences);
+}
+```
 
-6. **User Context**: Store user preferences and history
+### 4. Smart Response Generation
+```javascript
+function generateContextualResponse(query, userHistory, products) {
+  const context = {
+    previousQueries: userHistory.slice(-5),
+    preferredStores: userHistory.getPreferredStores(),
+    budgetRange: userHistory.getAverageBudget(),
+    categories: userHistory.getTopCategories()
+  };
+  
+  // Generate personalized response
+  if (products.length > 0) {
+    return {
+      response: generateProductResponse(products, context),
+      type: 'product_comparison',
+      products: products,
+      personalization: {
+        recommendedStore: context.preferredStores[0],
+        budgetFit: calculateBudgetFit(products, context.budgetRange),
+        categoryMatch: calculateCategoryMatch(products, context.categories)
+      }
+    };
+  }
+  
+  return {
+    response: generateFallbackResponse(query, context),
+    type: 'general'
+  };
+}
+```
 
-### Recommended N8N Nodes
-- **HTTP Request**: For external API calls
-- **Code**: For complex logic processing
-- **Switch**: For routing based on conditions
-- **Merge**: For combining data from multiple sources
-- **Schedule Trigger**: For periodic price updates
-- **Webhook**: For real-time responses
-
-This creates a truly intelligent shopping assistant that can handle complex queries and provide personalized recommendations.
+This creates a truly intelligent shopping assistant that learns from user behavior and provides increasingly personalized recommendations.

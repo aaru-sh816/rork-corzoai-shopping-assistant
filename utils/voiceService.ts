@@ -6,11 +6,27 @@ import * as Speech from 'expo-speech';
 const ELEVENLABS_API_KEY = 'sk_4f8c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c8c4c';
 const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Bella voice
 
-// Web Speech API types
+// Web Speech API types for better compatibility
+interface WebSpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: ((event: any) => void) | null;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: {
+      new(): WebSpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new(): WebSpeechRecognition;
+    };
+    speechSynthesis: SpeechSynthesis;
   }
 }
 
