@@ -8,6 +8,7 @@ import {
   Text
 } from 'react-native';
 import { Mic } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 
 interface VoiceButtonProps {
@@ -22,6 +23,7 @@ const VoiceButton = ({
   isListening 
 }: VoiceButtonProps) => {
   const [animation] = useState(new Animated.Value(1));
+  const [rippleAnimation] = useState(new Animated.Value(0));
   
   useEffect(() => {
     if (isListening) {
@@ -40,11 +42,33 @@ const VoiceButton = ({
           }),
         ])
       ).start();
+      
+      // Create ripple effect
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rippleAnimation, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rippleAnimation, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     } else {
       // Stop the animation
       Animated.timing(animation, {
         toValue: 1,
         duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      Animated.timing(rippleAnimation, {
+        toValue: 0,
+        duration: 0,
         useNativeDriver: true,
       }).start();
     }
@@ -57,6 +81,16 @@ const VoiceButton = ({
       onStartRecording();
     }
   };
+
+  const rippleScale = rippleAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 2],
+  });
+  
+  const rippleOpacity = rippleAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.7, 0],
+  });
 
   // Web doesn't support SpeechRecognition in the same way
   if (Platform.OS === 'web') {
@@ -75,6 +109,18 @@ const VoiceButton = ({
 
   return (
     <View style={styles.container}>
+      {isListening && (
+        <Animated.View
+          style={[
+            styles.ripple,
+            {
+              transform: [{ scale: rippleScale }],
+              opacity: rippleOpacity,
+            },
+          ]}
+        />
+      )}
+      
       <Animated.View
         style={[
           styles.animatedContainer,
@@ -84,13 +130,25 @@ const VoiceButton = ({
         ]}
       >
         <TouchableOpacity
-          style={[styles.button, isListening ? styles.activeButton : null]}
+          style={styles.button}
           onPress={handlePress}
           activeOpacity={0.7}
         >
-          <Mic size={24} color={isListening ? Colors.dark.background : Colors.dark.text} />
+          {isListening ? (
+            <LinearGradient
+              colors={[Colors.dark.accent, Colors.dark.accentDark]}
+              style={styles.buttonGradient}
+            >
+              <Mic size={24} color="#000000" />
+            </LinearGradient>
+          ) : (
+            <View style={styles.buttonInner}>
+              <Mic size={24} color={Colors.dark.text} />
+            </View>
+          )}
         </TouchableOpacity>
       </Animated.View>
+      
       {isListening && <View style={styles.recordingIndicator} />}
     </View>
   );
@@ -101,6 +159,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  ripple: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.dark.accent,
+  },
   animatedContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -109,14 +174,22 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.dark.card,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    overflow: 'hidden',
+  },
+  buttonGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonInner: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   activeButton: {
     backgroundColor: Colors.dark.accent,

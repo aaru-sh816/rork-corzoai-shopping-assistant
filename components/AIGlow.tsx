@@ -18,6 +18,7 @@ const AIGlow = ({
   const scale = useRef(new Animated.Value(0.9)).current;
   const opacity = useRef(new Animated.Value(isActive ? 0.8 : 0.4)).current;
   const innerRotation = useRef(new Animated.Value(0)).current;
+  const innerScale = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     // Outer rotation animation
@@ -52,6 +53,24 @@ const AIGlow = ({
         Animated.timing(scale, {
           toValue: 0.9,
           duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+    
+    // Inner pulsing animation (slightly out of phase)
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(innerScale, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(innerScale, {
+          toValue: 0.8,
+          duration: 1800,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -93,8 +112,8 @@ const AIGlow = ({
         <LinearGradient
           colors={[
             color,
-            Platform.select({ web: 'transparent', default: 'transparent' }),
-            Platform.select({ web: color, default: color }),
+            'transparent',
+            color,
             'transparent',
           ]}
           start={{ x: 0.1, y: 0.1 }}
@@ -109,7 +128,7 @@ const AIGlow = ({
               width: size * 0.8,
               height: size * 0.8,
               borderRadius: (size * 0.8) / 2,
-              transform: [{ rotate: spinInner }],
+              transform: [{ rotate: spinInner }, { scale: innerScale }],
             },
           ]}
         >
@@ -117,7 +136,7 @@ const AIGlow = ({
             colors={[
               'transparent',
               color,
-              Platform.select({ web: 'transparent', default: 'transparent' }),
+              'transparent',
               color,
             ]}
             start={{ x: 0.2, y: 0.2 }}
@@ -139,6 +158,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   gradient: {
     width: '100%',
@@ -148,6 +168,7 @@ const styles = StyleSheet.create({
   innerGlow: {
     position: 'absolute',
     overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
 });
 

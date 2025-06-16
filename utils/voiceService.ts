@@ -2,17 +2,25 @@ import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
 
-// Add TypeScript types for Web Speech API
-// Use a more compatible approach to declare the Web Speech API types
-interface SpeechRecognitionConstructor {
-  new (): SpeechRecognition;
+// Define types for Web Speech API without conflicting with global declarations
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
 }
 
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  start(): void;
-  stop(): void;
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
 }
 
 // Initialize ElevenLabs (in a real app)
@@ -22,14 +30,14 @@ const VOICE_ID = 'YOUR_VOICE_ID';
 export const startVoiceRecognition = async (): Promise<{ isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
-      // Use type assertion to avoid TypeScript errors
-      const SpeechRecognition = (window as any).SpeechRecognition || 
-                               (window as any).webkitSpeechRecognition;
-      if (!SpeechRecognition) {
+      // Use a safer approach to access Web Speech API
+      const webSpeechRecognition = (window as any).SpeechRecognition || 
+                                  (window as any).webkitSpeechRecognition;
+      if (!webSpeechRecognition) {
         throw new Error('Speech recognition not supported');
       }
       
-      const recognition = new SpeechRecognition();
+      const recognition = new webSpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.start();
@@ -53,11 +61,11 @@ export const startVoiceRecognition = async (): Promise<{ isListening: boolean }>
 export const stopVoiceRecognition = async (): Promise<{ text: string; isListening: boolean }> => {
   if (Platform.OS === 'web') {
     try {
-      // Use type assertion to avoid TypeScript errors
-      const SpeechRecognition = (window as any).SpeechRecognition || 
-                               (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
+      // Use a safer approach to access Web Speech API
+      const webSpeechRecognition = (window as any).SpeechRecognition || 
+                                  (window as any).webkitSpeechRecognition;
+      if (webSpeechRecognition) {
+        const recognition = new webSpeechRecognition();
         recognition.stop();
       }
     } catch (error) {
@@ -80,16 +88,16 @@ export const stopVoiceRecognition = async (): Promise<{ text: string; isListenin
 export const textToSpeech = async (text: string): Promise<void> => {
   try {
     if (Platform.OS === 'web') {
-      // Use Web Speech API with type assertions to avoid TypeScript errors
-      const speechSynthesis = (window as any).speechSynthesis;
-      const SpeechSynthesisUtterance = (window as any).SpeechSynthesisUtterance;
+      // Use Web Speech API with a safer approach
+      const webSpeechSynthesis = (window as any).speechSynthesis;
+      const WebSpeechSynthesisUtterance = (window as any).SpeechSynthesisUtterance;
       
-      if (speechSynthesis && SpeechSynthesisUtterance) {
-        const speech = new SpeechSynthesisUtterance(text);
+      if (webSpeechSynthesis && WebSpeechSynthesisUtterance) {
+        const speech = new WebSpeechSynthesisUtterance(text);
         speech.rate = 1;
         speech.pitch = 1;
         speech.volume = 1;
-        speechSynthesis.speak(speech);
+        webSpeechSynthesis.speak(speech);
         return;
       }
       throw new Error('Speech synthesis not supported');

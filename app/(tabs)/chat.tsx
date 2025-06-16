@@ -11,10 +11,12 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Dimensions
+  Dimensions,
+  Image
 } from 'react-native';
-import { ArrowLeft, Send, Mic } from 'lucide-react-native';
+import { ArrowLeft, Send, Mic, X, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import StatusBar from '@/components/StatusBar';
 import ChatMessage from '@/components/ChatMessage';
@@ -26,7 +28,7 @@ import { generateAIResponse } from '@/utils/aiService';
 import { startVoiceRecognition, stopVoiceRecognition, textToSpeech } from '@/utils/voiceService';
 import HeadphoneComparison from '@/components/HeadphoneComparison';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -38,8 +40,11 @@ export default function ChatScreen() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHeadphoneComparison, setShowHeadphoneComparison] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
+  const [responseData, setResponseData] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const inputHeight = useRef(new Animated.Value(50)).current;
+  const maxInputHeight = 120;
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -91,6 +96,7 @@ export default function ChatScreen() {
   const processUserInput = async (userMessage: string) => {
     setIsLoading(true);
     setShowGlow(true);
+    setResponseData(null);
     
     // Check if the message is about groceries to show preferences UI
     const lowerMessage = userMessage.toLowerCase();
@@ -113,11 +119,21 @@ export default function ChatScreen() {
     try {
       // Call the n8n webhook with the user's message
       const response = await generateAIResponse(userMessage);
-      addMessage({ text: response, isUser: false });
+      addMessage({ text: response.text, isUser: false });
+      
+      // Store structured data if available
+      if (response.data) {
+        setResponseData(response.data);
+        
+        // Handle specific response types
+        if (response.data.products && Array.isArray(response.data.products)) {
+          setShowHeadphoneComparison(true);
+        }
+      }
       
       // Speak the response using text-to-speech
       if (Platform.OS !== 'web') {
-        await textToSpeech(response);
+        await textToSpeech(response.text);
       }
     } catch (error) {
       console.error('Error generating response:', error);
@@ -205,19 +221,45 @@ Would you like me to add this to your cart or show you more options?`;
     setShowGlow(!showGlow);
   };
 
+  const handleInputChange = (text: string) => {
+    setInputText(text);
+    
+    // Adjust input height based on content
+    const numberOfLines = text.split('\n').length;
+    const newHeight = Math.min(50 + (numberOfLines - 1) * 20, maxInputHeight);
+    
+    Animated.timing(inputHeight, {
+      toValue: newHeight,
+      duration: 100,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleNewChat = () => {
+    // Clear messages and start a new chat
+    // This would typically reset the conversation in a real app
+    addMessage({
+      text: "Hi there! I'm your CorzoAI shopping assistant. How can I help you today?",
+      isUser: false
+    });
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar />
       
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.8)', 'rgba(0,0,0,0.7)']}
+        style={styles.header}
+      >
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.dark.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Thread</Text>
-        <TouchableOpacity style={styles.newChatButton} onPress={toggleGlow}>
-          <Text style={styles.newChatButtonText}>+</Text>
+        <TouchableOpacity style={styles.newChatButton} onPress={handleNewChat}>
+          <Plus size={20} color={Colors.dark.text} />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
       
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingView} 
@@ -225,7 +267,12 @@ Would you like me to add this to your cart or show you more options?`;
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {showGlow && (
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+          <Animated.View 
+            style={[
+              styles.glowContainer, 
+              { transform: [{ scale: pulseAnim }] }
+            ]}
+          >
             <AIGlow isActive={isLoading} />
           </Animated.View>
         )}
@@ -264,51 +311,87 @@ Would you like me to add this to your cart or show you more options?`;
           
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color={Colors.dark.accent} size="small" />
-              <Text style={styles.loadingText}>Thinking...</Text>
+              <View style={styles.loadingBubble}>
+                <View style={styles.typingIndicator}>
+                  <View style={[styles.typingDot, styles.typingDot1]} />
+                  <View style={[styles.typingDot, styles.typingDot2]} />
+                  <View style={[styles.typingDot, styles.typingDot3]} />
+                </View>
+              </View>
             </View>
           )}
           
           {isListening && (
             <View style={styles.listeningContainer}>
-              <Text style={styles.listeningText}>Listening...</Text>
-              <View style={styles.waveContainer}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <View key={`wave-${i}`} style={[styles.wave, { height: Math.random() * 20 + 5 }]} />
-                ))}
-              </View>
+              <LinearGradient
+                colors={[Colors.dark.accent, Colors.dark.accentDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.listeningBubble}
+              >
+                <Text style={styles.listeningText}>Listening...</Text>
+                <View style={styles.waveContainer}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Animated.View 
+                      key={`wave-${i}`} 
+                      style={[
+                        styles.wave, 
+                        { 
+                          height: Math.random() * 20 + 5,
+                          backgroundColor: '#000'
+                        }
+                      ]} 
+                    />
+                  ))}
+                </View>
+              </LinearGradient>
             </View>
           )}
         </ScrollView>
         
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Ask Anything Shopping"
-            placeholderTextColor={Colors.dark.secondaryText}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            editable={!isListening && !showPreferences && !showHeadphoneComparison}
-          />
-          
-          {inputText.trim() ? (
-            <TouchableOpacity 
-              style={[styles.sendButton, (isLoading || showPreferences || showHeadphoneComparison) && styles.disabledButton]} 
-              onPress={handleSend}
-              disabled={isLoading || showPreferences || showHeadphoneComparison}
-            >
-              <Send size={20} color={Colors.dark.text} />
-            </TouchableOpacity>
-          ) : (
-            <VoiceButton 
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
-              isListening={isListening}
-            />
-          )}
-        </View>
+        <LinearGradient
+          colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)', '#000']}
+          style={styles.inputWrapper}
+        >
+          <View style={styles.inputContainer}>
+            <Animated.View style={[styles.inputBackground, { height: inputHeight }]}>
+              <TextInput
+                style={[styles.input, { height: inputHeight }]}
+                placeholder="Ask Anything Shopping"
+                placeholderTextColor={Colors.dark.secondaryText}
+                value={inputText}
+                onChangeText={handleInputChange}
+                multiline
+                maxLength={500}
+                editable={!isListening && !showPreferences && !showHeadphoneComparison}
+              />
+            </Animated.View>
+            
+            {inputText.trim() ? (
+              <TouchableOpacity 
+                style={[
+                  styles.sendButton, 
+                  (isLoading || showPreferences || showHeadphoneComparison) && styles.disabledButton
+                ]} 
+                onPress={handleSend}
+                disabled={isLoading || showPreferences || showHeadphoneComparison}
+              >
+                <LinearGradient
+                  colors={[Colors.dark.accent, Colors.dark.accentDark]}
+                  style={styles.sendButtonGradient}
+                >
+                  <Send size={20} color="#000000" />
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <VoiceButton 
+                onStartRecording={handleStartRecording}
+                onStopRecording={handleStopRecording}
+                isListening={isListening}
+              />
+            )}
+          </View>
+        </LinearGradient>
       </KeyboardAvoidingView>
     </View>
   );
@@ -324,15 +407,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.border,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.dark.card,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -345,17 +428,20 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.dark.card,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  newChatButtonText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.dark.text,
-  },
   keyboardAvoidingView: {
     flex: 1,
+  },
+  glowContainer: {
+    position: 'absolute',
+    top: -50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 0,
   },
   messagesContainer: {
     flex: 1,
@@ -365,7 +451,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   tryAskingContainer: {
-    backgroundColor: Colors.dark.card,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
@@ -378,26 +464,60 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   loadingContainer: {
+    alignItems: 'flex-start',
+    marginHorizontal: 16,
+    marginVertical: 8,
+  },
+  loadingBubble: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    maxWidth: '80%',
+  },
+  typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 16,
-    gap: 8,
+    height: 30,
+    width: 60,
   },
-  loadingText: {
-    color: Colors.dark.secondaryText,
-    fontSize: 14,
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.dark.accent,
+    marginHorizontal: 3,
+  },
+  typingDot1: {
+    opacity: 0.4,
+    transform: [{ scale: 0.9 }],
+  },
+  typingDot2: {
+    opacity: 0.7,
+    transform: [{ scale: 1 }],
+  },
+  typingDot3: {
+    opacity: 1,
+    transform: [{ scale: 1.1 }],
   },
   listeningContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 16,
   },
+  listeningBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 12,
+  },
   listeningText: {
-    color: Colors.dark.accent,
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
   },
   waveContainer: {
     flexDirection: 'row',
@@ -410,21 +530,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.accent,
     borderRadius: 2,
   },
+  inputWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.dark.border,
-    backgroundColor: Colors.dark.background,
+  },
+  inputBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 24,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
   },
   input: {
-    flex: 1,
-    backgroundColor: Colors.dark.input,
-    borderRadius: 24,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     color: Colors.dark.text,
     fontSize: 16,
     maxHeight: 120,
@@ -433,13 +555,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.dark.accent,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
+    overflow: 'hidden',
+  },
+  sendButtonGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: Colors.dark.card,
     opacity: 0.7,
   },
 });

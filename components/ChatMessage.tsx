@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
+
+const { width } = Dimensions.get('window');
 
 interface ChatMessageProps {
   message: string;
@@ -13,18 +16,38 @@ const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
     <View style={[styles.container, isUser ? styles.userContainer : styles.botContainer]}>
       {!isUser && (
         <View style={styles.avatarContainer}>
-          <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' }} 
-            style={styles.avatar} 
-          />
+          <LinearGradient
+            colors={[Colors.dark.accent, Colors.dark.accentDark]}
+            style={styles.avatarGradient}
+          >
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80' }} 
+              style={styles.avatar} 
+            />
+          </LinearGradient>
         </View>
       )}
-      <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-        <Text style={[styles.message, isUser ? styles.userMessage : styles.botMessage]}>
-          {message}
-        </Text>
-        {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
-      </View>
+      
+      {isUser ? (
+        <LinearGradient
+          colors={[Colors.dark.accent, Colors.dark.accentDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.bubble, styles.userBubble]}
+        >
+          <Text style={[styles.message, styles.userMessage]}>
+            {message}
+          </Text>
+          {timestamp && <Text style={styles.userTimestamp}>{timestamp}</Text>}
+        </LinearGradient>
+      ) : (
+        <View style={[styles.bubble, styles.botBubble]}>
+          <Text style={[styles.message, styles.botMessage]}>
+            {message}
+          </Text>
+          {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
+        </View>
+      )}
     </View>
   );
 };
@@ -45,9 +68,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.dark.accent,
     marginRight: 12,
     overflow: 'hidden',
+  },
+  avatarGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatar: {
     width: 36,
@@ -57,13 +85,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    maxWidth: '80%',
+    maxWidth: width * 0.75,
   },
   userBubble: {
-    backgroundColor: Colors.dark.accent,
+    borderBottomRightRadius: 4,
   },
   botBubble: {
     backgroundColor: Colors.dark.card,
+    borderBottomLeftRadius: 4,
   },
   message: {
     fontSize: 16,
@@ -78,6 +107,12 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: Colors.dark.secondaryText,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  userTimestamp: {
+    fontSize: 12,
+    color: 'rgba(0,0,0,0.7)',
     marginTop: 4,
     alignSelf: 'flex-end',
   },

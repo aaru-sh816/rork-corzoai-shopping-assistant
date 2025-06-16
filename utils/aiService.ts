@@ -10,7 +10,7 @@ interface Message {
   content: string | Array<{ type: 'text' | 'image'; text?: string; image?: string }>;
 }
 
-export const generateAIResponse = async (prompt: string): Promise<string> => {
+export const generateAIResponse = async (prompt: string): Promise<{ text: string; data?: any }> => {
   try {
     // System message to define the AI's behavior
     const messages: Message[] = [
@@ -29,7 +29,7 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
       }
     ];
 
-    // Try n8n webhook first
+    // Call n8n webhook with the user's message
     try {
       const encodedMessage = encodeURIComponent(prompt);
       const webhookUrl = `${N8N_WEBHOOK_URL}?message=${encodedMessage}`;
@@ -42,21 +42,30 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
         
         // If the response contains a structured format, use it
         if (response.data.response) {
-          return response.data.response;
+          return { 
+            text: response.data.response,
+            data: response.data
+          };
         }
         
         // If it's a different format, handle accordingly
         if (typeof response.data === 'string') {
-          return response.data;
+          return { text: response.data };
         }
         
         // If it's a product comparison or structured data
         if (response.data.products || response.data.comparisons) {
-          // Process structured data and return formatted text
-          return formatStructuredResponse(response.data);
+          // Return both the formatted text and the structured data
+          return { 
+            text: formatStructuredResponse(response.data),
+            data: response.data
+          };
         }
         
-        return JSON.stringify(response.data);
+        return { 
+          text: JSON.stringify(response.data),
+          data: response.data
+        };
       }
       
       throw new Error('Invalid response from n8n webhook');
@@ -79,7 +88,7 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
           }
 
           const data = await streamResponse.json();
-          return data.completion;
+          return { text: data.completion };
         } catch (streamError) {
           console.log('Streaming failed, falling back to direct OpenAI:', streamError);
           
@@ -103,16 +112,16 @@ export const generateAIResponse = async (prompt: string): Promise<string> => {
           }
           
           const openaiData = await openaiResponse.json();
-          return openaiData.choices[0].message.content || getSimulatedResponse(prompt);
+          return { text: openaiData.choices[0].message.content || getSimulatedResponse(prompt) };
         }
       } else {
         // For web, use simulated responses
-        return getSimulatedResponse(prompt);
+        return { text: getSimulatedResponse(prompt) };
       }
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
-    return getSimulatedResponse(prompt);
+    return { text: getSimulatedResponse(prompt) };
   }
 };
 
