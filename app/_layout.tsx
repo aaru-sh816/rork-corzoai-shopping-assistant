@@ -6,11 +6,16 @@ import { useEffect, useState } from "react";
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/useAuthStore';
 import WelcomeScreen from "@/components/WelcomeScreen";
-import LoginScreen from "@/components/LoginScreen";
+import { LoginScreen } from "@/components/LoginScreen";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -39,15 +44,19 @@ export default function RootLayout() {
     return null;
   }
 
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-
   return (
-    <>
-      {showWelcome && <WelcomeScreen onComplete={() => setShowWelcome(false)} />}
-      <RootLayoutNav />
-    </>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {!isAuthenticated ? (
+          <LoginScreen />
+        ) : (
+          <>
+            {showWelcome && <WelcomeScreen onComplete={() => setShowWelcome(false)} />}
+            <RootLayoutNav />
+          </>
+        )}
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
 

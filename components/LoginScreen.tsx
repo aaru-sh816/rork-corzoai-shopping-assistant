@@ -16,7 +16,7 @@ import Colors from '@/constants/colors';
 import { useAuthStore } from '@/store/useAuthStore';
 import AIGlow from './AIGlow';
 
-const LoginScreen = () => {
+export const LoginScreen = () => {
   const router = useRouter();
   const { login, verifyOTP, isLoading, error } = useAuthStore();
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -220,5 +220,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default LoginScreen;

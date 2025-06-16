@@ -7,6 +7,8 @@ declare global {
   interface Window {
     SpeechRecognition?: any;
     webkitSpeechRecognition?: any;
+    speechSynthesis?: SpeechSynthesis;
+    SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance;
   }
 }
 
@@ -77,7 +79,7 @@ export const textToSpeech = async (text: string): Promise<void> => {
         speech.rate = 1;
         speech.pitch = 1;
         speech.volume = 1;
-        window.speechSynthesis.speak(speech);
+        window.speechSynthesis?.speak(speech);
         return;
       }
       throw new Error('Speech synthesis not supported');

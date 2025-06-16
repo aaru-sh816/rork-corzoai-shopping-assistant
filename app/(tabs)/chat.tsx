@@ -23,6 +23,7 @@ import GroceryPreferences from '@/components/GroceryPreferences';
 import { useAppStore } from '@/store/useAppStore';
 import { generateAIResponse } from '@/utils/aiService';
 import { startVoiceRecognition, stopVoiceRecognition, textToSpeech } from '@/utils/voiceService';
+import HeadphoneComparison from '@/components/HeadphoneComparison';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function ChatScreen() {
   const [isListening, setIsListening] = useState(false);
   const [showGlow, setShowGlow] = useState(true);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showHeadphoneComparison, setShowHeadphoneComparison] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -43,7 +45,7 @@ export default function ChatScreen() {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages, showPreferences]);
+  }, [messages, showPreferences, showHeadphoneComparison]);
 
   useEffect(() => {
     // Pulse animation for the glow when AI is responding
@@ -93,6 +95,14 @@ export default function ChatScreen() {
         (lowerMessage.includes('order') || lowerMessage.includes('buy'))) {
       setCurrentQuery(userMessage);
       setShowPreferences(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if the message is about headphones comparison
+    if (lowerMessage.includes('headphone') && 
+        (lowerMessage.includes('compare') || lowerMessage.includes('price') || lowerMessage.includes('under 5000'))) {
+      setShowHeadphoneComparison(true);
       setIsLoading(false);
       return;
     }
@@ -163,6 +173,25 @@ The best price for these items is on Blinkit at ₹87 total. Would you like to c
     addMessage({ text: responseText, isUser: false });
   };
 
+  const handleProductSelect = (product: any) => {
+    setShowHeadphoneComparison(false);
+    
+    // Add a message with the selected product
+    const productText = `I'm interested in the ${product.name} for ₹${product.price}`;
+    
+    addMessage({ text: productText, isUser: true });
+    
+    // Generate a response based on the selected product
+    const responseText = `Great choice! The ${product.name} is available for ₹${product.price} on ${product.store}. 
+    
+It features:
+${product.features.map((feature: string) => `- ${feature}`).join('\n')}
+
+Would you like me to add this to your cart or show you more options?`;
+    
+    addMessage({ text: responseText, isUser: false });
+  };
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -207,9 +236,9 @@ The best price for these items is on Blinkit at ₹87 total. Would you like to c
             <Text style={styles.tryAskingText}>Try Asking ✨ ✨</Text>
           </View>
           
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <ChatMessage
-              key={message.id}
+              key={`${message.id}:${index}`}
               message={message.text}
               isUser={message.isUser}
               timestamp={formatTimestamp(message.timestamp)}
@@ -220,6 +249,12 @@ The best price for these items is on Blinkit at ₹87 total. Would you like to c
             <GroceryPreferences 
               query={currentQuery}
               onComplete={handlePreferencesComplete}
+            />
+          )}
+
+          {showHeadphoneComparison && (
+            <HeadphoneComparison 
+              onSelectProduct={handleProductSelect}
             />
           )}
           
@@ -251,14 +286,14 @@ The best price for these items is on Blinkit at ₹87 total. Would you like to c
             onChangeText={setInputText}
             multiline
             maxLength={500}
-            editable={!isListening && !showPreferences}
+            editable={!isListening && !showPreferences && !showHeadphoneComparison}
           />
           
           {inputText.trim() ? (
             <TouchableOpacity 
-              style={[styles.sendButton, (isLoading || showPreferences) && styles.disabledButton]} 
+              style={[styles.sendButton, (isLoading || showPreferences || showHeadphoneComparison) && styles.disabledButton]} 
               onPress={handleSend}
-              disabled={isLoading || showPreferences}
+              disabled={isLoading || showPreferences || showHeadphoneComparison}
             >
               <Send size={20} color={Colors.dark.text} />
             </TouchableOpacity>
