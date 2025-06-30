@@ -25,6 +25,9 @@ import GroceryPreferences from '@/components/GroceryPreferences';
 import HeadphoneComparison from '@/components/HeadphoneComparison';
 import ProductDetailCard from '@/components/ProductDetailCard';
 import UseCaseSelector from '@/components/UseCaseSelector';
+import VettedAnalysis from '@/components/VettedAnalysis';
+import ProductSelectionGrid from '@/components/ProductSelectionGrid';
+import SearchInterface from '@/components/SearchInterface';
 import { useAppStore } from '@/store/useAppStore';
 import { generateAIResponse } from '@/utils/aiService';
 import { startVoiceRecognition, stopVoiceRecognition, textToSpeech } from '@/utils/voiceService';
@@ -42,6 +45,9 @@ export default function ChatScreen() {
   const [showHeadphoneComparison, setShowHeadphoneComparison] = useState(false);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showUseCaseSelector, setShowUseCaseSelector] = useState(false);
+  const [showVettedAnalysis, setShowVettedAnalysis] = useState(false);
+  const [showProductSelection, setShowProductSelection] = useState(false);
+  const [showSearchInterface, setShowSearchInterface] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [responseData, setResponseData] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -55,7 +61,7 @@ export default function ChatScreen() {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages, showPreferences, showHeadphoneComparison, showProductDetail, showUseCaseSelector]);
+  }, [messages, showPreferences, showHeadphoneComparison, showProductDetail, showUseCaseSelector, showVettedAnalysis, showProductSelection]);
 
   useEffect(() => {
     // Enhanced pulse animation for AI thinking
@@ -128,6 +134,9 @@ export default function ChatScreen() {
     setShowHeadphoneComparison(false);
     setShowProductDetail(false);
     setShowUseCaseSelector(false);
+    setShowVettedAnalysis(false);
+    setShowProductSelection(false);
+    setShowSearchInterface(false);
     
     const lowerMessage = userMessage.toLowerCase();
     
@@ -160,8 +169,10 @@ export default function ChatScreen() {
             if (response.products || 
                 (lowerMessage.includes('headphone') && 
                  (lowerMessage.includes('compare') || lowerMessage.includes('under') || lowerMessage.includes('best')))) {
-              setShowHeadphoneComparison(true);
-              addMessage({ text: response.text, isUser: false });
+              
+              // First show vetted analysis
+              setShowVettedAnalysis(true);
+              addMessage({ text: "Let me analyze the best options from trusted sources...", isUser: false });
               setIsLoading(false);
               return;
             }
@@ -184,6 +195,12 @@ export default function ChatScreen() {
               return;
             }
             break;
+
+          case 'search_interface':
+            setShowSearchInterface(true);
+            addMessage({ text: "What are you shopping for today?", isUser: false });
+            setIsLoading(false);
+            return;
         }
       }
       
@@ -276,12 +293,28 @@ Would you like to checkout now?`;
     addMessage({ text: responseText, isUser: false });
   };
 
+  const handleVettedAnalysisContinue = () => {
+    setShowVettedAnalysis(false);
+    setShowHeadphoneComparison(true);
+    
+    addMessage({ text: "Based on the analysis, here are the top recommendations:", isUser: false });
+  };
+
+  const handleSearchInterfaceSearch = (query: string) => {
+    setShowSearchInterface(false);
+    addMessage({ text: query, isUser: true });
+    processUserInput(query);
+  };
+
   const handleNewChat = () => {
     // Reset all states
     setShowPreferences(false);
     setShowHeadphoneComparison(false);
     setShowProductDetail(false);
     setShowUseCaseSelector(false);
+    setShowVettedAnalysis(false);
+    setShowProductSelection(false);
+    setShowSearchInterface(false);
     setResponseData(null);
     
     addMessage({
@@ -309,10 +342,10 @@ Would you like to checkout now?`;
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Thread</Text>
+          <Text style={styles.headerTitle}>CorzoAI</Text>
           <View style={styles.aiIndicator}>
             <Sparkles size={16} color={Colors.dark.accent} />
-            <Text style={styles.aiText}>AI Assistant</Text>
+            <Text style={styles.aiText}>Superhuman Assistant</Text>
           </View>
         </View>
         
@@ -364,6 +397,21 @@ Would you like to checkout now?`;
               timestamp={formatTimestamp(message.timestamp)}
             />
           ))}
+          
+          {showSearchInterface && (
+            <SearchInterface 
+              onSearch={handleSearchInterfaceSearch}
+              onSuggestionSelect={handleSearchInterfaceSearch}
+            />
+          )}
+
+          {showVettedAnalysis && (
+            <VettedAnalysis 
+              query={currentQuery}
+              analysis={responseData?.analysis}
+              onContinue={handleVettedAnalysisContinue}
+            />
+          )}
           
           {showPreferences && (
             <GroceryPreferences 
@@ -445,7 +493,7 @@ Would you like to checkout now?`;
                 onChangeText={setInputText}
                 multiline
                 maxLength={500}
-                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector}
+                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector && !showVettedAnalysis && !showSearchInterface}
                 onSubmitEditing={handleSend}
                 returnKeyType="send"
               />
@@ -455,10 +503,10 @@ Would you like to checkout now?`;
               <TouchableOpacity 
                 style={[
                   styles.sendButton, 
-                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector) && styles.disabledButton
+                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showVettedAnalysis || showSearchInterface) && styles.disabledButton
                 ]} 
                 onPress={handleSend}
-                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector}
+                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showVettedAnalysis || showSearchInterface}
               >
                 <LinearGradient
                   colors={[Colors.dark.accent, Colors.dark.accentDark]}

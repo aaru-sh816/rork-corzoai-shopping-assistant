@@ -19,6 +19,9 @@ interface AIResponse {
   priceComparison?: boolean;
   useCase?: boolean;
   productDetail?: any;
+  sources?: any[];
+  analysis?: any;
+  recommendations?: any[];
 }
 
 export const generateAIResponse = async (prompt: string): Promise<AIResponse> => {
@@ -53,6 +56,9 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
           priceComparison: response.data.priceComparison,
           useCase: response.data.useCase,
           productDetail: response.data.productDetail,
+          sources: response.data.sources,
+          analysis: response.data.analysis,
+          recommendations: response.data.recommendations,
         };
       }
       
@@ -76,6 +82,9 @@ export const generateAIResponse = async (prompt: string): Promise<AIResponse> =>
           priceComparison: response.data.priceComparison,
           useCase: response.data.useCase,
           productDetail: response.data.productDetail,
+          sources: response.data.sources,
+          analysis: response.data.analysis,
+          recommendations: response.data.recommendations,
         };
       }
       
@@ -113,6 +122,8 @@ const detectResponseType = (query: string, data: any): string => {
     if (data.priceComparison) return 'price_comparison';
     if (data.useCase) return 'use_case_selection';
     if (data.productDetail) return 'product_detail';
+    if (data.analysis) return 'vetted_analysis';
+    if (data.sources) return 'research_sources';
   }
   
   // Fallback to query analysis
@@ -129,6 +140,12 @@ const detectResponseType = (query: string, data: any): string => {
   if (lowerQuery.includes('price') || lowerQuery.includes('compare')) {
     return 'price_comparison';
   }
+  if (lowerQuery.includes('analysis') || lowerQuery.includes('review')) {
+    return 'vetted_analysis';
+  }
+  if (lowerQuery.includes('source') || lowerQuery.includes('research')) {
+    return 'research_sources';
+  }
   
   return 'general';
 };
@@ -142,16 +159,34 @@ const getSimulatedData = (query: string): Partial<AIResponse> => {
       products: [
         {
           id: 'h1',
-          name: 'Sennheiser Accentum Wireless',
-          price: 12989,
+          name: 'Sony WH-1000XM6',
+          price: 448,
           image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
           store: 'Amazon',
-          features: ['Impressive sound', 'Exceptional battery life', 'Noise Cancellation'],
-          cons: ['Average mic quality'],
-          rating: 4.5,
-          bestValue: true
+          features: ['Industry-leading noise cancellation', 'Premium sound quality', '30-hour battery life'],
+          cons: ['Expensive', 'Bulky design'],
+          rating: 4.8,
+          bestOverall: true,
+          sources: ['TechRadar', 'CNET', 'What Hi-Fi?']
+        },
+        {
+          id: 'h2',
+          name: 'Bose QuietComfort Ultra Headphones',
+          price: 449,
+          image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+          store: 'Bose',
+          features: ['Exceptional comfort', 'Spatial audio', 'Premium build quality'],
+          cons: ['Very expensive', 'Limited customization'],
+          rating: 4.7,
+          premium: true,
+          sources: ['SoundGuys', 'RTINGS', 'Consumer Reports']
         }
-      ]
+      ],
+      analysis: {
+        summary: "For flights, noise-cancelling headphones should ideally cancel both low and high frequencies, and be comfortable for long periods of use.",
+        recommendation: "The Sony WH-1000XM6 stands out with class-leading noise cancellation.",
+        sources: ['TechRadar', 'CNET', 'What Hi-Fi?', 'SoundGuys']
+      }
     };
   }
   
@@ -184,7 +219,7 @@ const formatStructuredResponse = (data: any): string => {
     
     products.forEach((product: any, index: number) => {
       response += `${index + 1}. ${product.name}\n`;
-      response += `   💰 ₹${product.price?.toLocaleString() || 'N/A'}\n`;
+      response += `   💰 $${product.price || 'N/A'}\n`;
       response += `   🏪 ${product.store || 'Unknown Store'}\n`;
       if (product.features && Array.isArray(product.features)) {
         response += `   ✨ ${product.features.slice(0, 2).join(', ')}\n`;
@@ -208,6 +243,10 @@ const formatStructuredResponse = (data: any): string => {
     return "What's your ideal use case for these headphones?";
   }
   
+  if (data.analysis) {
+    return data.analysis.summary || "I've analyzed the best options for you based on expert reviews.";
+  }
+  
   // Default formatting for other structured data
   return data.message || data.response || "I've found some great options for you. Let me show you the details.";
 };
@@ -218,18 +257,18 @@ const getIntelligentResponse = (prompt: string): string => {
   // Headphone queries
   if (lowerPrompt.includes('headphone') || lowerPrompt.includes('headphones')) {
     if (lowerPrompt.includes('under') && (lowerPrompt.includes('5000') || lowerPrompt.includes('5k'))) {
-      return "I found excellent headphones under ₹5,000! Let me show you the best options with detailed comparisons.";
+      return "I found excellent headphones under ₹5,000! Let me show you the best options with detailed comparisons from trusted sources.";
     }
     if (lowerPrompt.includes('10k') || lowerPrompt.includes('10000')) {
       return "For headphones under ₹10,000, I need to understand your use case better to recommend the perfect option.";
     }
     if (lowerPrompt.includes('wireless') || lowerPrompt.includes('bluetooth')) {
-      return "For wireless headphones, I'll show you the best options with detailed comparisons across multiple stores.";
+      return "For wireless headphones, I'll show you the best options with detailed comparisons across multiple stores and expert reviews.";
     }
     if (lowerPrompt.includes('compare') || lowerPrompt.includes('best')) {
-      return "Let me show you a detailed comparison of the best headphones in your budget range.";
+      return "Let me show you a detailed comparison of the best headphones based on expert analysis from multiple sources.";
     }
-    return "I can help you find the perfect headphones! Let me show you some great options.";
+    return "I can help you find the perfect headphones! Let me show you some expertly vetted options.";
   }
   
   // Protein queries

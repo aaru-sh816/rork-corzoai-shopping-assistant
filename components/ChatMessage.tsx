@@ -6,7 +6,7 @@ import Colors from '@/constants/colors';
 const { width } = Dimensions.get('window');
 
 interface ChatMessageProps {
-  message: string;
+  message: string | { text: string };
   isUser: boolean;
   timestamp?: string;
 }
@@ -14,7 +14,7 @@ interface ChatMessageProps {
 const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
   // Ensure message is always a string
   const messageText = typeof message === 'string' ? message : 
-                     typeof message === 'object' && message !== null && 'text' in message ? (message as any).text :
+                     typeof message === 'object' && message !== null && 'text' in message ? message.text :
                      JSON.stringify(message);
 
   return (
