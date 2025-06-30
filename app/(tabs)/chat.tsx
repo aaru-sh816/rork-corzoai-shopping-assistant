@@ -25,7 +25,6 @@ import GroceryPreferences from '@/components/GroceryPreferences';
 import HeadphoneComparison from '@/components/HeadphoneComparison';
 import ProductDetailCard from '@/components/ProductDetailCard';
 import UseCaseSelector from '@/components/UseCaseSelector';
-import VettedAnalysis from '@/components/VettedAnalysis';
 import ProductSelectionGrid from '@/components/ProductSelectionGrid';
 import SearchInterface from '@/components/SearchInterface';
 import { useAppStore } from '@/store/useAppStore';
@@ -45,7 +44,6 @@ export default function ChatScreen() {
   const [showHeadphoneComparison, setShowHeadphoneComparison] = useState(false);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showUseCaseSelector, setShowUseCaseSelector] = useState(false);
-  const [showVettedAnalysis, setShowVettedAnalysis] = useState(false);
   const [showProductSelection, setShowProductSelection] = useState(false);
   const [showSearchInterface, setShowSearchInterface] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
@@ -61,7 +59,7 @@ export default function ChatScreen() {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages, showPreferences, showHeadphoneComparison, showProductDetail, showUseCaseSelector, showVettedAnalysis, showProductSelection]);
+  }, [messages, showPreferences, showHeadphoneComparison, showProductDetail, showUseCaseSelector, showProductSelection]);
 
   useEffect(() => {
     // Enhanced pulse animation for AI thinking
@@ -134,7 +132,6 @@ export default function ChatScreen() {
     setShowHeadphoneComparison(false);
     setShowProductDetail(false);
     setShowUseCaseSelector(false);
-    setShowVettedAnalysis(false);
     setShowProductSelection(false);
     setShowSearchInterface(false);
     
@@ -170,9 +167,9 @@ export default function ChatScreen() {
                 (lowerMessage.includes('headphone') && 
                  (lowerMessage.includes('compare') || lowerMessage.includes('under') || lowerMessage.includes('best')))) {
               
-              // First show vetted analysis
-              setShowVettedAnalysis(true);
-              addMessage({ text: "Let me analyze the best options from trusted sources...", isUser: false });
+              // Show headphone comparison directly
+              setShowHeadphoneComparison(true);
+              addMessage({ text: "Here are the best headphone options based on your requirements:", isUser: false });
               setIsLoading(false);
               return;
             }
@@ -293,13 +290,6 @@ Would you like to checkout now?`;
     addMessage({ text: responseText, isUser: false });
   };
 
-  const handleVettedAnalysisContinue = () => {
-    setShowVettedAnalysis(false);
-    setShowHeadphoneComparison(true);
-    
-    addMessage({ text: "Based on the analysis, here are the top recommendations:", isUser: false });
-  };
-
   const handleSearchInterfaceSearch = (query: string) => {
     setShowSearchInterface(false);
     addMessage({ text: query, isUser: true });
@@ -312,7 +302,6 @@ Would you like to checkout now?`;
     setShowHeadphoneComparison(false);
     setShowProductDetail(false);
     setShowUseCaseSelector(false);
-    setShowVettedAnalysis(false);
     setShowProductSelection(false);
     setShowSearchInterface(false);
     setResponseData(null);
@@ -404,14 +393,6 @@ Would you like to checkout now?`;
               onSuggestionSelect={handleSearchInterfaceSearch}
             />
           )}
-
-          {showVettedAnalysis && (
-            <VettedAnalysis 
-              query={currentQuery}
-              analysis={responseData?.analysis}
-              onContinue={handleVettedAnalysisContinue}
-            />
-          )}
           
           {showPreferences && (
             <GroceryPreferences 
@@ -493,7 +474,7 @@ Would you like to checkout now?`;
                 onChangeText={setInputText}
                 multiline
                 maxLength={500}
-                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector && !showVettedAnalysis && !showSearchInterface}
+                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector && !showSearchInterface}
                 onSubmitEditing={handleSend}
                 returnKeyType="send"
               />
@@ -503,10 +484,10 @@ Would you like to checkout now?`;
               <TouchableOpacity 
                 style={[
                   styles.sendButton, 
-                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showVettedAnalysis || showSearchInterface) && styles.disabledButton
+                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface) && styles.disabledButton
                 ]} 
                 onPress={handleSend}
-                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showVettedAnalysis || showSearchInterface}
+                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface}
               >
                 <LinearGradient
                   colors={[Colors.dark.accent, Colors.dark.accentDark]}
