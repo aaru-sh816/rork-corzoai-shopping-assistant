@@ -1,28 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Colors from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
 
 interface ChatMessageProps {
-  message: string | { text: string };
+  message: string;
   isUser: boolean;
   timestamp?: string;
 }
 
 const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
-  // Ensure message is always a string
-  const messageText = typeof message === 'string' ? message : 
-                     typeof message === 'object' && message !== null && 'text' in message ? message.text :
-                     JSON.stringify(message);
-
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.botContainer]}>
       {!isUser && (
         <View style={styles.avatarContainer}>
           <LinearGradient
-            colors={[Colors.dark.accent, Colors.dark.accentDark]}
+            colors={Colors.dark.gradientPrimary}
             style={styles.avatarGradient}
           >
             <Text style={styles.avatarText}>Z</Text>
@@ -32,23 +28,28 @@ const ChatMessage = ({ message, isUser, timestamp }: ChatMessageProps) => {
       
       {isUser ? (
         <LinearGradient
-          colors={[Colors.dark.accent, Colors.dark.accentDark]}
+          colors={Colors.dark.gradientPrimary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.bubble, styles.userBubble]}
         >
           <Text style={[styles.message, styles.userMessage]}>
-            {messageText}
+            {message}
           </Text>
           {timestamp && <Text style={styles.userTimestamp}>{timestamp}</Text>}
         </LinearGradient>
       ) : (
-        <View style={[styles.bubble, styles.botBubble]}>
-          <Text style={[styles.message, styles.botMessage]}>
-            {messageText}
-          </Text>
-          {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
-        </View>
+        <BlurView intensity={10} style={[styles.bubble, styles.botBubble]}>
+          <LinearGradient
+            colors={Colors.dark.gradientGlass}
+            style={styles.botBubbleGradient}
+          >
+            <Text style={[styles.message, styles.botMessage]}>
+              {message}
+            </Text>
+            {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
+          </LinearGradient>
+        </BlurView>
       )}
     </View>
   );
@@ -94,10 +95,16 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   botBubble: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderBottomLeftRadius: 4,
+    overflow: 'hidden',
+  },
+  botBubbleGradient: {
+    borderRadius: 20,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.dark.glassBorder,
   },
   message: {
     fontSize: 16,
@@ -108,7 +115,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   botMessage: {
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     fontWeight: '400',
   },
   timestamp: {

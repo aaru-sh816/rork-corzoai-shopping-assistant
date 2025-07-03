@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { Info, ShoppingCart, Sparkles, Plus, Minus, Check } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window');
 
@@ -28,11 +29,6 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
         [field]: value,
       },
     }));
-    
-    // Update estimated total (simplified calculation)
-    const basePrice = type === 'onion' ? 29 : type === 'garlic' ? 18 : 14;
-    const weightMultiplier = value.includes('1 kg') ? 4 : value.includes('500 g') ? 2 : 1;
-    // This is a simplified calculation - in real app would be more complex
   };
 
   const handleQuantityChange = (type: string, delta: number) => {
@@ -61,138 +57,165 @@ const GroceryPreferences = ({ query, onComplete }: GroceryPreferencesProps) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.queryContainer}>
-          <Text style={styles.queryText}>{query}</Text>
+    <BlurView intensity={20} style={styles.container}>
+      <LinearGradient
+        colors={Colors.dark.gradientGlass}
+        style={styles.containerGradient}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <LinearGradient
+            colors={Colors.dark.gradientPrimary}
+            style={styles.queryContainer}
+          >
+            <Text style={styles.queryText}>{query}</Text>
+          </LinearGradient>
+          <View style={styles.divider} />
         </View>
-        <View style={styles.divider} />
-      </View>
-      
-      {/* Title */}
-      <View style={styles.titleContainer}>
-        <Text style={styles.heading}>Select your preferences</Text>
-        <Text style={styles.subheading}>Customize quantities and get the best prices</Text>
-      </View>
-      
-      <ScrollView style={styles.preferencesContainer} showsVerticalScrollIndicator={false}>
-        {Object.entries(preferences).map(([type, pref]) => (
-          <View key={type} style={styles.preferenceSection}>
-            {/* Item Header */}
-            <View style={styles.itemHeader}>
-              <View style={styles.itemTitleContainer}>
-                <Text style={styles.itemTitle}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </Text>
-                <View style={styles.priceTag}>
-                  <Text style={styles.priceText}>₹{getItemPrice(type)}</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.infoButton}>
-                <Info size={16} color={Colors.dark.accent} />
-              </TouchableOpacity>
-            </View>
-            
-            {/* Weight Selection */}
-            <View style={styles.weightSection}>
-              <Text style={styles.sectionLabel}>Weight</Text>
-              <View style={styles.optionsContainer}>
-                {weightOptions[type as keyof typeof weightOptions].map((option) => (
-                  <TouchableOpacity
-                    key={`${type}-${option}`}
-                    style={[
-                      styles.optionButton,
-                      pref.weight === option && styles.selectedOption
-                    ]}
-                    onPress={() => handlePreferenceChange(type, 'weight', option)}
-                  >
-                    <Text 
-                      style={[
-                        styles.optionText,
-                        pref.weight === option && styles.selectedOptionText
-                      ]}
-                    >
-                      {option}
+        
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <LinearGradient
+            colors={Colors.dark.gradientPrimary}
+            style={styles.titleGradient}
+          >
+            <Text style={styles.heading}>Select your preferences</Text>
+          </LinearGradient>
+          <Text style={styles.subheading}>Customize quantities and get the best prices</Text>
+        </View>
+        
+        <ScrollView style={styles.preferencesContainer} showsVerticalScrollIndicator={false}>
+          {Object.entries(preferences).map(([type, pref]) => (
+            <BlurView key={type} intensity={10} style={styles.preferenceSection}>
+              <LinearGradient
+                colors={Colors.dark.gradientGlass}
+                style={styles.sectionGradient}
+              >
+                {/* Item Header */}
+                <View style={styles.itemHeader}>
+                  <View style={styles.itemTitleContainer}>
+                    <Text style={styles.itemTitle}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </Text>
-                    {pref.weight === option && (
-                      <Check size={14} color="#000000" style={styles.checkIcon} />
-                    )}
+                    <LinearGradient
+                      colors={Colors.dark.gradientGreen}
+                      style={styles.priceTag}
+                    >
+                      <Text style={styles.priceText}>₹{getItemPrice(type)}</Text>
+                    </LinearGradient>
+                  </View>
+                  <TouchableOpacity style={styles.infoButton}>
+                    <Info size={16} color={Colors.dark.primary} />
                   </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            
-            {/* Quantity Selection */}
-            <View style={styles.quantitySection}>
-              <Text style={styles.sectionLabel}>Quantity</Text>
-              <View style={styles.quantityControls}>
-                <TouchableOpacity 
-                  style={[styles.quantityButton, pref.quantity <= 1 && styles.disabledButton]}
-                  onPress={() => handleQuantityChange(type, -1)}
-                  disabled={pref.quantity <= 1}
-                >
-                  <Minus size={16} color={pref.quantity <= 1 ? Colors.dark.secondaryText : Colors.dark.text} />
-                </TouchableOpacity>
-                <View style={styles.quantityDisplay}>
-                  <Text style={styles.quantityText}>{pref.quantity}</Text>
                 </View>
-                <TouchableOpacity 
-                  style={styles.quantityButton}
-                  onPress={() => handleQuantityChange(type, 1)}
-                >
-                  <Plus size={16} color={Colors.dark.text} />
-                </TouchableOpacity>
+                
+                {/* Weight Selection */}
+                <View style={styles.weightSection}>
+                  <Text style={styles.sectionLabel}>Weight</Text>
+                  <View style={styles.optionsContainer}>
+                    {weightOptions[type as keyof typeof weightOptions].map((option) => (
+                      <TouchableOpacity
+                        key={`${type}-${option}`}
+                        style={[
+                          styles.optionButton,
+                          pref.weight === option && styles.selectedOption
+                        ]}
+                        onPress={() => handlePreferenceChange(type, 'weight', option)}
+                      >
+                        {pref.weight === option ? (
+                          <LinearGradient
+                            colors={Colors.dark.gradientPrimary}
+                            style={styles.selectedOptionGradient}
+                          >
+                            <Text style={styles.selectedOptionText}>{option}</Text>
+                            <Check size={14} color="#000000" style={styles.checkIcon} />
+                          </LinearGradient>
+                        ) : (
+                          <>
+                            <Text style={styles.optionText}>{option}</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                
+                {/* Quantity Selection */}
+                <View style={styles.quantitySection}>
+                  <Text style={styles.sectionLabel}>Quantity</Text>
+                  <View style={styles.quantityControls}>
+                    <TouchableOpacity 
+                      style={[styles.quantityButton, pref.quantity <= 1 && styles.disabledButton]}
+                      onPress={() => handleQuantityChange(type, -1)}
+                      disabled={pref.quantity <= 1}
+                    >
+                      <Minus size={16} color={pref.quantity <= 1 ? Colors.dark.secondaryText : Colors.dark.foreground} />
+                    </TouchableOpacity>
+                    <LinearGradient
+                      colors={Colors.dark.gradientPrimary}
+                      style={styles.quantityDisplay}
+                    >
+                      <Text style={styles.quantityText}>{pref.quantity}</Text>
+                    </LinearGradient>
+                    <TouchableOpacity 
+                      style={styles.quantityButton}
+                      onPress={() => handleQuantityChange(type, 1)}
+                    >
+                      <Plus size={16} color={Colors.dark.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </LinearGradient>
+            </BlurView>
+          ))}
+          
+          {/* Estimated Total */}
+          <BlurView intensity={15} style={styles.totalSection}>
+            <LinearGradient
+              colors={Colors.dark.gradientGreen}
+              style={styles.totalContainer}
+            >
+              <View style={styles.totalHeader}>
+                <Text style={styles.totalLabel}>Estimated Total</Text>
+                <Text style={styles.totalAmount}>₹{estimatedTotal}</Text>
               </View>
-            </View>
-          </View>
-        ))}
-        
-        {/* Estimated Total */}
-        <View style={styles.totalSection}>
-          <LinearGradient
-            colors={['rgba(52, 211, 153, 0.1)', 'rgba(52, 211, 153, 0.05)']}
-            style={styles.totalContainer}
-          >
-            <View style={styles.totalHeader}>
-              <Text style={styles.totalLabel}>Estimated Total</Text>
-              <Text style={styles.totalAmount}>₹{estimatedTotal}</Text>
-            </View>
-            <Text style={styles.totalSubtext}>Best price on Blinkit • Delivery in 10 mins</Text>
-          </LinearGradient>
-        </View>
-        
-        {/* Suggest More Button */}
-        <TouchableOpacity style={styles.suggestButton}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)']}
-            style={styles.suggestButtonGradient}
-          >
-            <Sparkles size={20} color={Colors.dark.accent} />
-            <Text style={styles.suggestButtonText}>Suggest more items</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        {/* Add to Cart Button */}
-        <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
-          <LinearGradient
-            colors={[Colors.dark.accent, Colors.dark.accentDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.completeButtonGradient}
-          >
-            <ShoppingCart size={20} color="#000000" />
-            <Text style={styles.completeButtonText}>Add to Cart</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+              <Text style={styles.totalSubtext}>Best price on Blinkit • Delivery in 10 mins</Text>
+            </LinearGradient>
+          </BlurView>
+          
+          {/* Suggest More Button */}
+          <TouchableOpacity style={styles.suggestButton}>
+            <BlurView intensity={10} style={styles.suggestButtonBlur}>
+              <LinearGradient
+                colors={Colors.dark.gradientGlass}
+                style={styles.suggestButtonGradient}
+              >
+                <Sparkles size={20} color={Colors.dark.primary} />
+                <Text style={styles.suggestButtonText}>Suggest more items</Text>
+              </LinearGradient>
+            </BlurView>
+          </TouchableOpacity>
+          
+          {/* Add to Cart Button */}
+          <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+            <LinearGradient
+              colors={Colors.dark.gradientPrimary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.completeButtonGradient}
+            >
+              <ShoppingCart size={20} color="#000000" />
+              <Text style={styles.completeButtonText}>Add to Cart</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </LinearGradient>
+    </BlurView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0A0A0A',
     borderRadius: 24,
     marginHorizontal: 16,
     marginVertical: 16,
@@ -202,43 +225,50 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
+  },
+  containerGradient: {
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: Colors.dark.glassBorder,
   },
   header: {
     padding: 20,
     paddingBottom: 16,
+    alignItems: 'center',
   },
   queryContainer: {
-    backgroundColor: 'rgba(52, 211, 153, 0.1)',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
-    alignSelf: 'center',
     marginBottom: 16,
   },
   queryText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.accent,
+    color: '#000000',
     textAlign: 'center',
   },
   divider: {
     height: 4,
     width: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignSelf: 'center',
+    backgroundColor: Colors.dark.glassBorder,
     borderRadius: 2,
   },
   titleContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+    alignItems: 'center',
+  },
+  titleGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 8,
   },
   heading: {
     fontSize: 24,
     fontWeight: '700',
-    color: Colors.dark.text,
-    marginBottom: 8,
+    color: '#000000',
     textAlign: 'center',
   },
   subheading: {
@@ -251,12 +281,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   preferenceSection: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 16,
-    padding: 16,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  sectionGradient: {
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 16,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -272,10 +305,9 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
   },
   priceTag: {
-    backgroundColor: 'rgba(52, 211, 153, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -283,15 +315,17 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.dark.accent,
+    color: '#000000',
   },
   infoButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    backgroundColor: Colors.dark.glass,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   weightSection: {
     marginBottom: 16,
@@ -308,28 +342,35 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionButton: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.dark.glass,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.dark.glassBorder,
+    overflow: 'hidden',
+  },
+  selectedOption: {
+    borderColor: Colors.dark.primary,
+  },
+  selectedOptionGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  selectedOption: {
-    backgroundColor: Colors.dark.accent,
-    borderColor: Colors.dark.accent,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginHorizontal: -16,
+    marginVertical: -10,
   },
   optionText: {
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     fontSize: 14,
     fontWeight: '500',
   },
   selectedOptionText: {
     color: '#000000',
     fontWeight: '600',
+    fontSize: 14,
   },
   checkIcon: {
     marginLeft: 4,
@@ -348,15 +389,16 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: Colors.dark.glass,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   disabledButton: {
     opacity: 0.5,
   },
   quantityDisplay: {
-    backgroundColor: 'rgba(52, 211, 153, 0.1)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
@@ -366,17 +408,17 @@ const styles = StyleSheet.create({
   quantityText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.accent,
+    color: '#000000',
     textAlign: 'center',
   },
   totalSection: {
     marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   totalContainer: {
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.2)',
   },
   totalHeader: {
     flexDirection: 'row',
@@ -387,21 +429,24 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.text,
+    color: '#000000',
   },
   totalAmount: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.dark.accent,
+    color: '#000000',
   },
   totalSubtext: {
     fontSize: 14,
-    color: Colors.dark.secondaryText,
+    color: 'rgba(0,0,0,0.7)',
   },
   suggestButton: {
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
+  },
+  suggestButtonBlur: {
+    borderRadius: 16,
   },
   suggestButtonGradient: {
     flexDirection: 'row',
@@ -409,9 +454,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 16,
   },
   suggestButtonText: {
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontSize: 16,
     fontWeight: '500',
   },

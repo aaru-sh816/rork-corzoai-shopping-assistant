@@ -13,9 +13,10 @@ import {
   Dimensions,
   StatusBar as RNStatusBar
 } from 'react-native';
-import { ArrowLeft, Send, Plus, Sparkles, Zap } from 'lucide-react-native';
+import { ArrowLeft, Send, Plus, Sparkles, Zap, Mic } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Colors from '@/constants/colors';
 import StatusBar from '@/components/StatusBar';
 import ChatMessage from '@/components/ChatMessage';
@@ -51,6 +52,7 @@ export default function ChatScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowOpacity = useRef(new Animated.Value(0.8)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -319,29 +321,39 @@ Would you like to checkout now?`;
 
   return (
     <View style={styles.container}>
-      <RNStatusBar barStyle="light-content" backgroundColor="#000000" />
+      <RNStatusBar barStyle="light-content" backgroundColor={Colors.dark.background} />
       <StatusBar />
       
-      <LinearGradient
-        colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.9)', 'rgba(0,0,0,0.85)']}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <ArrowLeft size={24} color={Colors.dark.text} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>CorzoAI</Text>
-          <View style={styles.aiIndicator}>
-            <Sparkles size={16} color={Colors.dark.accent} />
-            <Text style={styles.aiText}>Superhuman Assistant</Text>
-          </View>
-        </View>
-        
-        <TouchableOpacity style={styles.headerButton} onPress={handleNewChat}>
-          <Plus size={24} color={Colors.dark.text} />
-        </TouchableOpacity>
-      </LinearGradient>
+      {/* Glass Header */}
+      <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
+        <BlurView intensity={20} style={styles.headerBlur}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+            style={styles.headerGradient}
+          >
+            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+              <ArrowLeft size={24} color={Colors.dark.foreground} />
+            </TouchableOpacity>
+            
+            <View style={styles.headerCenter}>
+              <LinearGradient
+                colors={Colors.dark.gradientPrimary}
+                style={styles.titleGradient}
+              >
+                <Text style={styles.headerTitle}>CorzoAI</Text>
+              </LinearGradient>
+              <View style={styles.aiIndicator}>
+                <Sparkles size={14} color={Colors.dark.primary} />
+                <Text style={styles.aiText}>Superhuman Assistant</Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity style={styles.headerButton} onPress={handleNewChat}>
+              <Plus size={24} color={Colors.dark.foreground} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </BlurView>
+      </Animated.View>
       
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingView} 
@@ -358,7 +370,7 @@ Would you like to checkout now?`;
               }
             ]}
           >
-            <AIGlow isActive={isLoading} color={Colors.dark.accent} size={120} />
+            <AIGlow isActive={isLoading} color={Colors.dark.primary} size={120} />
           </Animated.View>
         )}
         
@@ -370,10 +382,10 @@ Would you like to checkout now?`;
         >
           <View style={styles.welcomeContainer}>
             <LinearGradient
-              colors={['rgba(52, 211, 153, 0.1)', 'rgba(52, 211, 153, 0.05)']}
+              colors={Colors.dark.gradientGlass}
               style={styles.welcomeBadge}
             >
-              <Zap size={16} color={Colors.dark.accent} />
+              <Zap size={16} color={Colors.dark.primary} />
               <Text style={styles.welcomeText}>Superhuman AI Assistant</Text>
             </LinearGradient>
           </View>
@@ -421,25 +433,29 @@ Would you like to checkout now?`;
           
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <View style={styles.loadingBubble}>
+              <LinearGradient
+                colors={Colors.dark.gradientGlass}
+                style={styles.loadingBubble}
+              >
                 <View style={styles.typingIndicator}>
                   <View style={[styles.typingDot, styles.typingDot1]} />
                   <View style={[styles.typingDot, styles.typingDot2]} />
                   <View style={[styles.typingDot, styles.typingDot3]} />
                 </View>
                 <Text style={styles.loadingText}>AI is thinking...</Text>
-              </View>
+              </LinearGradient>
             </View>
           )}
           
           {isListening && (
             <View style={styles.listeningContainer}>
               <LinearGradient
-                colors={[Colors.dark.accent, Colors.dark.accentDark]}
+                colors={Colors.dark.gradientPrimary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.listeningBubble}
               >
+                <Mic size={20} color="#000000" />
                 <Text style={styles.listeningText}>Listening...</Text>
                 <View style={styles.waveContainer}>
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -460,51 +476,54 @@ Would you like to checkout now?`;
           )}
         </ScrollView>
         
-        <LinearGradient
-          colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.95)', '#000']}
-          style={styles.inputWrapper}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.inputBackground}>
-              <TextInput
-                style={styles.input}
-                placeholder="Ask anything about shopping..."
-                placeholderTextColor={Colors.dark.secondaryText}
-                value={inputText}
-                onChangeText={setInputText}
-                multiline
-                maxLength={500}
-                editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector && !showSearchInterface}
-                onSubmitEditing={handleSend}
-                returnKeyType="send"
-              />
-            </View>
-            
-            {inputText.trim() ? (
-              <TouchableOpacity 
-                style={[
-                  styles.sendButton, 
-                  (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface) && styles.disabledButton
-                ]} 
-                onPress={handleSend}
-                disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface}
-              >
-                <LinearGradient
-                  colors={[Colors.dark.accent, Colors.dark.accentDark]}
-                  style={styles.sendButtonGradient}
+        {/* Glass Input Container */}
+        <BlurView intensity={20} style={styles.inputWrapper}>
+          <LinearGradient
+            colors={Colors.dark.gradientGlass}
+            style={styles.inputGradient}
+          >
+            <View style={styles.inputContainer}>
+              <View style={styles.inputBackground}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ask anything about shopping..."
+                  placeholderTextColor={Colors.dark.secondaryText}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  multiline
+                  maxLength={500}
+                  editable={!isListening && !showPreferences && !showHeadphoneComparison && !showProductDetail && !showUseCaseSelector && !showSearchInterface}
+                  onSubmitEditing={handleSend}
+                  returnKeyType="send"
+                />
+              </View>
+              
+              {inputText.trim() ? (
+                <TouchableOpacity 
+                  style={[
+                    styles.sendButton, 
+                    (isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface) && styles.disabledButton
+                  ]} 
+                  onPress={handleSend}
+                  disabled={isLoading || showPreferences || showHeadphoneComparison || showProductDetail || showUseCaseSelector || showSearchInterface}
                 >
-                  <Send size={20} color="#000000" />
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : (
-              <VoiceButton 
-                onStartRecording={handleStartRecording}
-                onStopRecording={handleStopRecording}
-                isListening={isListening}
-              />
-            )}
-          </View>
-        </LinearGradient>
+                  <LinearGradient
+                    colors={Colors.dark.gradientPrimary}
+                    style={styles.sendButtonGradient}
+                  >
+                    <Send size={20} color="#000000" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : (
+                <VoiceButton 
+                  onStartRecording={handleStartRecording}
+                  onStopRecording={handleStopRecording}
+                  isListening={isListening}
+                />
+              )}
+            </View>
+          </LinearGradient>
+        </BlurView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -515,44 +534,66 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  header: {
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
+  headerBlur: {
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  headerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.dark.glass,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   headerCenter: {
     alignItems: 'center',
   },
+  titleGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.dark.text,
-    marginBottom: 2,
+    color: Colors.dark.foreground,
+    textAlign: 'center',
   },
   aiIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: 4,
   },
   aiText: {
     fontSize: 12,
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontWeight: '500',
   },
   keyboardAvoidingView: {
     flex: 1,
+    paddingTop: 120,
   },
   glowContainer: {
     position: 'absolute',
@@ -580,9 +621,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   welcomeText: {
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -592,13 +635,12 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   loadingBubble: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 16,
     maxWidth: '80%',
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.2)',
+    borderColor: Colors.dark.glassBorder,
   },
   typingIndicator: {
     flexDirection: 'row',
@@ -611,7 +653,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
     marginHorizontal: 2,
   },
   typingDot1: {
@@ -627,7 +669,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.2 }],
   },
   loadingText: {
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
@@ -658,31 +700,37 @@ const styles = StyleSheet.create({
   },
   wave: {
     width: 3,
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
     borderRadius: 2,
   },
   inputWrapper: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  inputGradient: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    padding: 16,
   },
   inputBackground: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 24,
+    backgroundColor: Colors.dark.glass,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.dark.glassBorder,
     minHeight: 48,
     justifyContent: 'center',
   },
   input: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     fontSize: 16,
     maxHeight: 120,
   },

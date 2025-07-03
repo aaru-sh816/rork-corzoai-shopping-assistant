@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Mic } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Colors from '@/constants/colors';
 
 interface VoiceButtonProps {
@@ -99,7 +100,14 @@ const VoiceButton = ({
         style={[styles.button, isListening ? styles.activeButton : null]} 
         onPress={handlePress}
       >
-        <Mic size={24} color={isListening ? Colors.dark.background : Colors.dark.text} />
+        <BlurView intensity={10} style={styles.webButtonBlur}>
+          <LinearGradient
+            colors={isListening ? Colors.dark.gradientPrimary : Colors.dark.gradientGlass}
+            style={styles.webButtonGradient}
+          >
+            <Mic size={24} color={isListening ? '#000000' : Colors.dark.foreground} />
+          </LinearGradient>
+        </BlurView>
         {isListening && (
           <Text style={styles.recordingText}>Voice input not fully supported on web</Text>
         )}
@@ -136,15 +144,20 @@ const VoiceButton = ({
         >
           {isListening ? (
             <LinearGradient
-              colors={[Colors.dark.accent, Colors.dark.accentDark]}
+              colors={Colors.dark.gradientPrimary}
               style={styles.buttonGradient}
             >
               <Mic size={24} color="#000000" />
             </LinearGradient>
           ) : (
-            <View style={styles.buttonInner}>
-              <Mic size={24} color={Colors.dark.text} />
-            </View>
+            <BlurView intensity={10} style={styles.buttonBlur}>
+              <LinearGradient
+                colors={Colors.dark.gradientGlass}
+                style={styles.buttonInner}
+              >
+                <Mic size={24} color={Colors.dark.foreground} />
+              </LinearGradient>
+            </BlurView>
           )}
         </TouchableOpacity>
       </Animated.View>
@@ -164,7 +177,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
   },
   animatedContainer: {
     alignItems: 'center',
@@ -184,21 +197,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  buttonBlur: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
   buttonInner: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 28,
+  },
+  webButtonBlur: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  webButtonGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 28,
   },
   activeButton: {
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
   },
   recordingIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
     position: 'absolute',
     bottom: -12,
   },

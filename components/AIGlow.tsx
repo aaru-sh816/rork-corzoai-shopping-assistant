@@ -11,7 +11,7 @@ interface AIGlowProps {
 
 const AIGlow = ({ 
   isActive = true, 
-  color = Colors.dark.accent,
+  color = Colors.dark.primary,
   size = 150 
 }: AIGlowProps) => {
   const rotation = useRef(new Animated.Value(0)).current;

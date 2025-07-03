@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Check, X, Star, ExternalLink, Award, TrendingUp } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
@@ -77,10 +78,20 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Best recommendations for your budget</Text>
-        <Text style={styles.subtitle}>Curated from 12+ sources • Updated 2 mins ago</Text>
-      </View>
+      <BlurView intensity={15} style={styles.header}>
+        <LinearGradient
+          colors={Colors.dark.gradientGlass}
+          style={styles.headerGradient}
+        >
+          <LinearGradient
+            colors={Colors.dark.gradientPrimary}
+            style={styles.titleGradient}
+          >
+            <Text style={styles.title}>Best recommendations for your budget</Text>
+          </LinearGradient>
+          <Text style={styles.subtitle}>Curated from 12+ sources • Updated 2 mins ago</Text>
+        </LinearGradient>
+      </BlurView>
       
       <ScrollView 
         horizontal 
@@ -90,121 +101,144 @@ const HeadphoneComparison = ({ onSelectProduct }: HeadphoneComparisonProps) => {
         decelerationRate="fast"
       >
         {headphones.map((product, index) => (
-          <View 
+          <BlurView 
             key={product.id} 
+            intensity={20}
             style={[
               styles.productCard,
               product.bestValue && styles.bestValueCard
             ]}
           >
-            {/* Badges */}
-            <View style={styles.badgesContainer}>
-              {product.bestValue && (
-                <LinearGradient
-                  colors={[Colors.dark.accent, Colors.dark.accentDark]}
-                  style={styles.bestValueBadge}
-                >
-                  <Award size={12} color="#000000" />
-                  <Text style={styles.badgeText}>Best Value</Text>
-                </LinearGradient>
-              )}
-              {product.trending && (
-                <View style={styles.trendingBadge}>
-                  <TrendingUp size={12} color="#FF6B6B" />
-                  <Text style={styles.trendingText}>Trending</Text>
-                </View>
-              )}
-              {product.discount > 0 && (
-                <View style={styles.discountBadge}>
-                  <Text style={styles.discountText}>{product.discount}% OFF</Text>
-                </View>
-              )}
-            </View>
-            
-            {/* Product Image */}
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: product.image }} style={styles.productImage} />
-            </View>
-            
-            <View style={styles.productInfo}>
-              {/* Product Name */}
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productSubtitle}>{product.subtitle}</Text>
-              
-              {/* Rating & Reviews */}
-              <View style={styles.ratingContainer}>
-                <View style={styles.starsContainer}>
-                  {renderStars(product.rating)}
-                  <Text style={styles.ratingText}>{product.rating}</Text>
-                </View>
-                <View style={styles.reviewBadge}>
-                  <Text style={styles.reviewText}>{product.reviewSources}</Text>
-                </View>
-              </View>
-              
-              {/* Features & Cons */}
-              <View style={styles.featuresContainer}>
-                <View style={styles.prosSection}>
-                  {product.features.slice(0, 3).map((feature, index) => (
-                    <View key={index} style={styles.featureRow}>
-                      <Check size={14} color={Colors.dark.accent} />
-                      <Text style={styles.featureText}>{feature}</Text>
-                    </View>
-                  ))}
-                </View>
-                
-                {product.cons.length > 0 && (
-                  <View style={styles.consSection}>
-                    {product.cons.slice(0, 1).map((con, index) => (
-                      <View key={index} style={styles.conRow}>
-                        <X size={14} color="#FF6B6B" />
-                        <Text style={styles.conText}>{con}</Text>
-                      </View>
-                    ))}
-                  </View>
+            <LinearGradient
+              colors={Colors.dark.gradientGlass}
+              style={styles.cardGradient}
+            >
+              {/* Badges */}
+              <View style={styles.badgesContainer}>
+                {product.bestValue && (
+                  <LinearGradient
+                    colors={Colors.dark.gradientPrimary}
+                    style={styles.bestValueBadge}
+                  >
+                    <Award size={12} color="#000000" />
+                    <Text style={styles.badgeText}>Best Value</Text>
+                  </LinearGradient>
+                )}
+                {product.trending && (
+                  <LinearGradient
+                    colors={['#FF6B6B', '#FF5252']}
+                    style={styles.trendingBadge}
+                  >
+                    <TrendingUp size={12} color="#FFFFFF" />
+                    <Text style={styles.trendingText}>Trending</Text>
+                  </LinearGradient>
+                )}
+                {product.discount > 0 && (
+                  <LinearGradient
+                    colors={Colors.dark.gradientGreen}
+                    style={styles.discountBadge}
+                  >
+                    <Text style={styles.discountText}>{product.discount}% OFF</Text>
+                  </LinearGradient>
                 )}
               </View>
               
-              {/* Price & Store */}
-              <View style={styles.priceSection}>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.currentPrice}>₹{product.price.toLocaleString()}</Text>
-                  {product.originalPrice && (
-                    <Text style={styles.originalPrice}>₹{product.originalPrice.toLocaleString()}</Text>
+              {/* Product Image */}
+              <LinearGradient
+                colors={['#FFFFFF', '#F8F9FA']}
+                style={styles.imageContainer}
+              >
+                <Image source={{ uri: product.image }} style={styles.productImage} />
+              </LinearGradient>
+              
+              <View style={styles.productInfo}>
+                {/* Product Name */}
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.productSubtitle}>{product.subtitle}</Text>
+                
+                {/* Rating & Reviews */}
+                <View style={styles.ratingContainer}>
+                  <View style={styles.starsContainer}>
+                    {renderStars(product.rating)}
+                    <Text style={styles.ratingText}>{product.rating}</Text>
+                  </View>
+                  <LinearGradient
+                    colors={['rgba(239, 68, 68, 0.2)', 'rgba(239, 68, 68, 0.1)']}
+                    style={styles.reviewBadge}
+                  >
+                    <Text style={styles.reviewText}>{product.reviewSources}</Text>
+                  </LinearGradient>
+                </View>
+                
+                {/* Features & Cons */}
+                <View style={styles.featuresContainer}>
+                  <View style={styles.prosSection}>
+                    {product.features.slice(0, 3).map((feature, index) => (
+                      <View key={index} style={styles.featureRow}>
+                        <Check size={14} color={Colors.dark.green} />
+                        <Text style={styles.featureText}>{feature}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  
+                  {product.cons.length > 0 && (
+                    <View style={styles.consSection}>
+                      {product.cons.slice(0, 1).map((con, index) => (
+                        <View key={index} style={styles.conRow}>
+                          <X size={14} color="#FF6B6B" />
+                          <Text style={styles.conText}>{con}</Text>
+                        </View>
+                      ))}
+                    </View>
                   )}
                 </View>
-                <View style={styles.storeContainer}>
-                  <Image source={{ uri: product.storeLogo }} style={styles.storeLogo} />
-                  <Text style={styles.storeName}>{product.store}</Text>
+                
+                {/* Price & Store */}
+                <View style={styles.priceSection}>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.currentPrice}>₹{product.price.toLocaleString()}</Text>
+                    {product.originalPrice && (
+                      <Text style={styles.originalPrice}>₹{product.originalPrice.toLocaleString()}</Text>
+                    )}
+                  </View>
+                  <View style={styles.storeContainer}>
+                    <Image source={{ uri: product.storeLogo }} style={styles.storeLogo} />
+                    <Text style={styles.storeName}>{product.store}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-            
-            {/* Action Button */}
-            <TouchableOpacity 
-              style={styles.selectButton}
-              onPress={() => onSelectProduct(product)}
-            >
-              <LinearGradient
-                colors={product.bestValue ? [Colors.dark.accent, Colors.dark.accentDark] : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
-                style={styles.selectButtonGradient}
+              
+              {/* Action Button */}
+              <TouchableOpacity 
+                style={styles.selectButton}
+                onPress={() => onSelectProduct(product)}
               >
-                <Text style={[styles.selectButtonText, product.bestValue && styles.bestValueButtonText]}>
-                  View Details
-                </Text>
-                <ExternalLink size={16} color={product.bestValue ? "#000000" : Colors.dark.text} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+                <LinearGradient
+                  colors={product.bestValue ? Colors.dark.gradientPrimary : Colors.dark.gradientGlass}
+                  style={styles.selectButtonGradient}
+                >
+                  <Text style={[styles.selectButtonText, product.bestValue && styles.bestValueButtonText]}>
+                    View Details
+                  </Text>
+                  <ExternalLink size={16} color={product.bestValue ? "#000000" : Colors.dark.foreground} />
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </BlurView>
         ))}
       </ScrollView>
       
       {/* Comparison Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          💡 Tip: Sennheiser offers better sound quality, Sony provides better value for money
-        </Text>
-      </View>
+      <BlurView intensity={10} style={styles.footer}>
+        <LinearGradient
+          colors={Colors.dark.gradientGlass}
+          style={styles.footerGradient}
+        >
+          <Text style={styles.footerText}>
+            💡 Tip: Sennheiser offers better sound quality, Sony provides better value for money
+          </Text>
+        </LinearGradient>
+      </BlurView>
     </View>
   );
 };
@@ -214,14 +248,28 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   header: {
-    paddingHorizontal: 16,
+    marginHorizontal: 16,
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 16,
+  },
+  titleGradient: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.dark.text,
-    marginBottom: 4,
+    color: '#000000',
   },
   subtitle: {
     fontSize: 14,
@@ -232,7 +280,6 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   productCard: {
-    backgroundColor: '#0A0A0A',
     borderRadius: 20,
     width: width * 0.85,
     marginRight: 16,
@@ -242,12 +289,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   bestValueCard: {
-    borderColor: Colors.dark.accent,
+    borderColor: Colors.dark.primary,
     borderWidth: 2,
+  },
+  cardGradient: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
   },
   badgesContainer: {
     position: 'absolute',
@@ -272,30 +322,27 @@ const styles = StyleSheet.create({
   trendingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 107, 107, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
   },
   trendingText: {
-    color: '#FF6B6B',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '600',
   },
   discountBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   discountText: {
-    color: '#22C55E',
+    color: '#000000',
     fontSize: 11,
     fontWeight: '600',
   },
   imageContainer: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: 32,
     alignItems: 'center',
     borderTopLeftRadius: 20,
@@ -312,7 +359,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     marginBottom: 4,
   },
   productSubtitle: {
@@ -334,11 +381,10 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     marginLeft: 4,
   },
   reviewBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -362,7 +408,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 13,
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
     fontWeight: '500',
     flex: 1,
   },
@@ -394,7 +440,7 @@ const styles = StyleSheet.create({
   currentPrice: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
   },
   originalPrice: {
     fontSize: 14,
@@ -428,18 +474,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 16,
   },
   selectButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.dark.text,
+    color: Colors.dark.foreground,
   },
   bestValueButtonText: {
     color: '#000000',
   },
   footer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  footerGradient: {
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+    borderRadius: 12,
   },
   footerText: {
     fontSize: 14,
